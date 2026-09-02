@@ -1,0 +1,387 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f4f7fb;
+  color: #1f2937;
+}
+
+
+/* HEADER */
+
+.header {
+  height: 70px;
+  padding: 0 50px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 25px;
+  font-weight: bold;
+  color: #2563eb;
+}
+
+.header-text {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+
+/* HERO */
+
+.hero {
+  padding: 70px 20px 80px;
+}
+
+.hero-content {
+  max-width: 700px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+
+/* BADGE */
+
+.badge {
+  display: inline-block;
+
+  background: #dbeafe;
+  color: #1d4ed8;
+
+  padding: 8px 15px;
+  border-radius: 20px;
+
+  font-size: 14px;
+  font-weight: bold;
+
+  margin-bottom: 20px;
+}
+
+
+/* HEADLINE */
+
+h1 {
+  margin: 0 0 20px;
+
+  color: #111827;
+
+  font-size: 52px;
+  line-height: 1.1;
+}
+
+.subtitle {
+  max-width: 600px;
+  margin: 0 auto 30px;
+
+  color: #4b5563;
+
+  font-size: 21px;
+  line-height: 1.5;
+}
+
+
+/* BENEFITS */
+
+.benefits {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+
+  gap: 25px;
+
+  margin-bottom: 35px;
+
+  color: #374151;
+
+  font-size: 15px;
+  font-weight: 500;
+}
+
+
+/* FORM */
+
+form {
+  max-width: 500px;
+  margin: 0 auto;
+
+  padding: 35px;
+
+  background: white;
+
+  border-radius: 14px;
+
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
+
+  text-align: left;
+}
+
+form h2 {
+  margin: 0 0 8px;
+
+  text-align: center;
+
+  font-size: 28px;
+  color: #111827;
+}
+
+.form-subtitle {
+  margin: 0 0 25px;
+
+  text-align: center;
+
+  color: #6b7280;
+
+  font-size: 14px;
+}
+
+
+/* FORM ROW */
+
+.form-row {
+  display: flex;
+  gap: 15px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+
+/* FORM GROUP */
+
+.form-group {
+  margin-bottom: 17px;
+}
+
+label {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: #374151;
+
+  font-size: 14px;
+  font-weight: bold;
+}
+
+
+/* INPUTS */
+
+input,
+select {
+  width: 100%;
+
+  padding: 14px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+
+  background: white;
+
+  font-family: inherit;
+  font-size: 16px;
+
+  transition: border-color 0.2s;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+
+  border-color: #2563eb;
+}
+
+
+/* BUTTON */
+
+button {
+  width: 100%;
+
+  padding: 17px;
+
+  margin-top: 5px;
+
+  border: none;
+  border-radius: 7px;
+
+  background: #2563eb;
+  color: white;
+
+  font-size: 18px;
+  font-weight: bold;
+
+  cursor: pointer;
+}
+
+button:hover {
+  background: #1d4ed8;
+}
+
+
+/* PRIVACY NOTE */
+
+.privacy-note {
+  margin: 15px 0 0;
+
+  text-align: center;
+
+  color: #6b7280;
+
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+
+/* WHY SECTION */
+
+.why-section {
+  padding: 70px 20px;
+
+  background: white;
+
+  text-align: center;
+}
+
+.why-section > h2 {
+  margin: 0 0 40px;
+
+  color: #111827;
+
+  font-size: 32px;
+}
+
+
+/* TRUST CARDS */
+
+.trust-items {
+  max-width: 1000px;
+
+  margin: 0 auto;
+
+  display: flex;
+
+  gap: 25px;
+}
+
+.trust-item {
+  flex: 1;
+
+  padding: 30px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+
+  background: #f9fafb;
+}
+
+.icon {
+  width: 40px;
+  height: 40px;
+
+  margin: 0 auto 15px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #dbeafe;
+  color: #2563eb;
+
+  font-weight: bold;
+}
+
+.trust-item h3 {
+  margin: 0 0 10px;
+
+  font-size: 19px;
+
+  color: #111827;
+}
+
+.trust-item p {
+  margin: 0;
+
+  color: #6b7280;
+
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+
+/* FOOTER */
+
+footer {
+  padding: 30px 20px;
+
+  background: #111827;
+
+  text-align: center;
+
+  color: #9ca3af;
+
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+footer p {
+  margin: 5px 0;
+}
+
+
+/* MOBILE */
+
+@media (max-width: 600px) {
+
+  .header {
+    padding: 0 20px;
+  }
+
+  .header-text {
+    display: none;
+  }
+
+  .hero {
+    padding: 45px 15px 60px;
+  }
+
+  h1 {
+    font-size: 38px;
+  }
+
+  .subtitle {
+    font-size: 18px;
+  }
+
+  .benefits {
+    gap: 12px;
+    font-size: 13px;
+  }
+
+  form {
+    padding: 25px 20px;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .trust-items {
+    flex-direction: column;
+  }
+
+  .why-section {
+    padding: 50px 20px;
+  }
+
+}
