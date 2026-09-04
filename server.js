@@ -1,10 +1,43 @@
 const express = require("express");
 const cors = require("cors");
+const { Pool } = require("pg");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json({ limit: "32kb" }));
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
+
+// Create the leads table automatically
+async function setupDatabase() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS leads (
+      id SERIAL PRIMARY KEY,
+      first_name TEXT NOT NULL,
+      last_name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      zip TEXT NOT NULL,
+      age TEXT NOT NULL,
+      coverage TEXT NOT NULL,
+      insurance TEXT NOT NULL,
+      consent BOOLEAN NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  console.log("Database connected and ready");
+}
+
+setupDatabase().catch((error) => {
+  console.error("Database setup error:", error);
+});
 
 // Health check
 app.get("/api/healthz", (req, res) => {
@@ -14,8 +47,8 @@ app.get("/api/healthz", (req, res) => {
   });
 });
 
-// Receive a life insurance lead
-app.post("/api/leads", (req, res) => {
+// Receive and save a life insurance lead
+app.post("/api/leads", async (req, res) => {
   const {
     firstName,
     lastName,
@@ -51,12 +84,40 @@ app.post("/api/leads", (req, res) => {
     });
   }
 
-  console.log("New SecureLife lead received");
+  try {
+    await pool.query(
+      `
+      INSERT INTO leads
+      (first_name, last_name, email, phone, zip, age, coverage, insurance, consent)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `,
+      [
+        firstName,
+        lastName,
+        email,
+        phone,
+        zip,
+        age,
+        coverage,
+        insurance,
+        consent
+      ]
+    );
 
-  res.status(201).json({
-    success: true,
-    message: "Your information has been received."
-  });
+    console.log("New SecureLife lead saved to database");
+
+    res.status(201).json({
+      success: true,
+      message: "Your information has been received."
+    });
+  } catch (error) {
+    console.error("Database error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Unable to save your information."
+    });
+  }
 });
 
 const PORT = process.env.PORT || 10000;
