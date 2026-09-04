@@ -119,7 +119,35 @@ app.post("/api/leads", async (req, res) => {
     });
   }
 });
+// View all saved leads - password protected
+app.get("/api/leads", async (req, res) => {
+  const password = req.headers["x-dashboard-password"];
 
+  if (!password || password !== process.env.DASHBOARD_PASSWORD) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized"
+    });
+  }
+
+  try {
+    const result = await pool.query(
+      "SELECT * FROM leads ORDER BY created_at DESC"
+    );
+
+    res.json({
+      success: true,
+      leads: result.rows
+    });
+  } catch (error) {
+    console.error("Error retrieving leads:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Unable to retrieve leads."
+    });
+  }
+});
 const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, "0.0.0.0", () => {
