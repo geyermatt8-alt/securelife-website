@@ -91,7 +91,26 @@ h1 {
   font-weight: 600;
 }
 
+/* =========================
+   HERO IMAGE
+   ========================= */
 
+.hero-image-wrapper {
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto 30px;
+  overflow: hidden;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(16, 42, 67, 0.12);
+}
+
+.hero-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
 /* =========================
    FORM
    ========================= */
