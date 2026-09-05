@@ -61,3 +61,4 @@ form.addEventListener("submit", async (event) => {
     alert("Something went wrong. Please try again.");
   }
 });
+JSON.stringify(data)
