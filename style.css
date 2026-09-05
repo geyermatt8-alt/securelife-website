@@ -2,12 +2,21 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   font-family: Arial, Helvetica, sans-serif;
   background: #f5f8fc;
   color: #172033;
 }
+
+
+/* =========================
+   HEADER
+   ========================= */
 
 .header {
   background: #ffffff;
@@ -29,14 +38,33 @@ body {
   font-size: 14px;
 }
 
+
+/* =========================
+   HERO AND BACKGROUND IMAGE
+   ========================= */
+
 .hero {
+  position: relative;
   padding: 60px 20px 70px;
+
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(7, 25, 43, 0.92) 0%,
+      rgba(10, 34, 57, 0.78) 42%,
+      rgba(10, 34, 57, 0.18) 78%
+    ),
+    url("images/family-home-hero-square.png");
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .hero-content {
-  max-width: 720px;
+  max-width: 1180px;
   margin: 0 auto;
-  text-align: center;
+  text-align: left;
 }
 
 .badge {
@@ -51,51 +79,58 @@ body {
 }
 
 h1 {
+  max-width: 680px;
+  margin: 0 0 18px;
+  color: #ffffff;
   font-size: 46px;
   line-height: 1.1;
-  margin: 0 0 18px;
-  color: #102a43;
 }
 
 .subtitle {
+  max-width: 620px;
+  margin: 0 0 24px;
+  color: #e7eef6;
   font-size: 18px;
   line-height: 1.6;
-  color: #667085;
-  max-width: 620px;
-  margin: 0 auto 24px;
 }
 
 .benefits {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 20px;
   flex-wrap: wrap;
   margin-bottom: 35px;
-  color: #344054;
+  color: #ffffff;
   font-size: 14px;
   font-weight: 600;
 }
 
+
+/* =========================
+   FORM
+   ========================= */
+
 form {
-  background: #ffffff;
+  max-width: 680px;
   padding: 35px;
+  background: #ffffff;
   border-radius: 16px;
-  box-shadow: 0 10px 35px rgba(16, 42, 67, 0.08);
+  box-shadow: 0 10px 35px rgba(16, 42, 67, 0.18);
   text-align: left;
 }
 
 form h2 {
   margin-top: 0;
   margin-bottom: 8px;
-  text-align: center;
   color: #102a43;
+  text-align: center;
   font-size: 28px;
 }
 
 .form-subtitle {
-  text-align: center;
-  color: #667085;
   margin-bottom: 28px;
+  color: #667085;
+  text-align: center;
 }
 
 .form-row {
@@ -111,28 +146,64 @@ form h2 {
 .form-group label {
   display: block;
   margin-bottom: 8px;
+  color: #344054;
   font-size: 14px;
   font-weight: 600;
-  color: #344054;
 }
+
+
+/* =========================
+   INPUTS AND DROPDOWN
+   ========================= */
 
 input[type="text"],
 input[type="email"],
-input[type="tel"] {
+input[type="tel"],
+select {
   width: 100%;
   padding: 14px;
+  background-color: #ffffff;
   border: 1px solid #d0d5dd;
   border-radius: 8px;
+  color: #172033;
+  font-family: inherit;
   font-size: 16px;
-  background: #ffffff;
 }
 
 input[type="text"]:focus,
 input[type="email"]:focus,
-input[type="tel"]:focus {
+input[type="tel"]:focus,
+select:focus {
   outline: none;
   border-color: #2878c8;
   box-shadow: 0 0 0 3px rgba(40, 120, 200, 0.12);
+}
+
+select {
+  appearance: none;
+  cursor: pointer;
+
+  background-image:
+    linear-gradient(
+      45deg,
+      transparent 50%,
+      #667085 50%
+    ),
+    linear-gradient(
+      135deg,
+      #667085 50%,
+      transparent 50%
+    );
+
+  background-position:
+    calc(100% - 20px) 50%,
+    calc(100% - 14px) 50%;
+
+  background-size:
+    6px 6px,
+    6px 6px;
+
+  background-repeat: no-repeat;
 }
 
 
@@ -145,58 +216,50 @@ input[type="tel"]:focus {
 }
 
 .slider-value {
+  margin: 10px 0 16px;
+  color: #123b68;
   text-align: center;
   font-size: 28px;
   font-weight: 700;
-  color: #123b68;
-  margin: 10px 0 16px;
 }
-
-
-/* Main slider */
 
 input[type="range"] {
-  -webkit-appearance: none;
   appearance: none;
+  -webkit-appearance: none;
   width: 100%;
   height: 8px;
-  border-radius: 10px;
+  margin: 5px 0;
   background: #dbe5ef;
+  border-radius: 10px;
   outline: none;
   cursor: pointer;
-  margin: 5px 0;
 }
 
-
-/* Chrome / Safari */
+/* Chrome and Safari */
 
 input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
   appearance: none;
+  -webkit-appearance: none;
   width: 24px;
   height: 24px;
-  border-radius: 50%;
   background: #1d6fb8;
   border: 4px solid #ffffff;
+  border-radius: 50%;
   box-shadow: 0 2px 7px rgba(0, 0, 0, 0.2);
   cursor: pointer;
 }
-
 
 /* Firefox */
 
 input[type="range"]::-moz-range-thumb {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
+  width: 17px;
+  height: 17px;
   background: #1d6fb8;
   border: 4px solid #ffffff;
+  border-radius: 50%;
   box-shadow: 0 2px 7px rgba(0, 0, 0, 0.2);
   cursor: pointer;
 }
-
-
-/* Slider labels */
 
 .slider-labels {
   display: flex;
@@ -206,52 +269,85 @@ input[type="range"]::-moz-range-thumb {
   font-size: 13px;
 }
 
-.insurance-labels {
-  justify-content: space-between;
-}
 
+/* =========================
+   CONSENT
+   ========================= */
 
-/* Consent */
-
-.form-group:has(#consent) label {
+.consent-group label {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 9px;
+  margin-bottom: 0;
   font-weight: 400;
   line-height: 1.5;
+  cursor: pointer;
 }
 
 #consent {
-  margin-top: 3px;
+  margin: 3px 0 0;
   flex-shrink: 0;
 }
 
 
-/* Button */
+/* =========================
+   SUBMIT BUTTON
+   ========================= */
 
 button[type="submit"] {
   width: 100%;
   padding: 16px;
+  background: #1d6fb8;
   border: none;
   border-radius: 9px;
-  background: #1d6fb8;
   color: #ffffff;
+  font-family: inherit;
   font-size: 17px;
   font-weight: 700;
   cursor: pointer;
-  transition: 0.2s ease;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
 button[type="submit"]:hover {
   background: #155b97;
+  transform: translateY(-1px);
+}
+
+button[type="submit"]:disabled {
+  background: #98a2b3;
+  cursor: not-allowed;
+  transform: none;
+}
+
+
+/* =========================
+   FORM MESSAGES AND PRIVACY
+   ========================= */
+
+.form-message {
+  min-height: 20px;
+  margin: 14px 0 0;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.form-message.success {
+  color: #067647;
+}
+
+.form-message.error {
+  color: #b42318;
 }
 
 .privacy-note {
-  text-align: center;
+  margin: 16px 0 0;
   color: #667085;
+  text-align: center;
   font-size: 12px;
   line-height: 1.5;
-  margin: 16px 0 0;
 }
 
 .privacy-note a {
@@ -269,15 +365,15 @@ button[type="submit"]:hover {
    ========================= */
 
 .why-section {
-  background: #ffffff;
   padding: 65px 20px;
+  background: #ffffff;
   text-align: center;
 }
 
 .why-section h2 {
-  font-size: 30px;
-  color: #102a43;
   margin-bottom: 40px;
+  color: #102a43;
+  font-size: 30px;
 }
 
 .trust-items {
@@ -296,19 +392,19 @@ button[type="submit"]:hover {
   width: 45px;
   height: 45px;
   margin: 0 auto 15px;
-  border-radius: 50%;
-  background: #e8f1fb;
-  color: #1d6fb8;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #e8f1fb;
+  border-radius: 50%;
+  color: #1d6fb8;
   font-size: 22px;
   font-weight: 700;
 }
 
 .trust-item h3 {
-  color: #102a43;
   margin-bottom: 10px;
+  color: #102a43;
 }
 
 .trust-item p {
@@ -322,10 +418,10 @@ button[type="submit"]:hover {
    ========================= */
 
 footer {
+  padding: 30px 20px;
   background: #102a43;
   color: #d9e2ec;
   text-align: center;
-  padding: 30px 20px;
   font-size: 12px;
   line-height: 1.6;
 }
@@ -347,6 +443,15 @@ footer {
 
   .hero {
     padding: 40px 15px 50px;
+
+    background-image:
+      linear-gradient(
+        rgba(7, 25, 43, 0.78),
+        rgba(7, 25, 43, 0.84)
+      ),
+      url("images/family-home-hero-square.png");
+
+    background-position: 68% center;
   }
 
   h1 {
@@ -358,8 +463,8 @@ footer {
   }
 
   .benefits {
-    gap: 10px;
     flex-direction: column;
+    gap: 10px;
   }
 
   form {
