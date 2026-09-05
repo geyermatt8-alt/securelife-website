@@ -870,7 +870,7 @@ app.post("/api/leads/:id/deliver", async (req, res) => {
     const { data, error } =
       await resend.emails.send({
 
-        from: "onboarding@resend.dev",
+        from: "leads@securelifeinsurances.com",
 
         to: [buyer.email],
 
