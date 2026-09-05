@@ -38,6 +38,8 @@ async function setupDatabase() {
 setupDatabase().catch((error) => {
   console.error("Database setup error:", error);
 });
+
+// Add lead management fields
 async function setupLeadManagement() {
   await pool.query(`
     ALTER TABLE leads
@@ -53,6 +55,7 @@ async function setupLeadManagement() {
 setupLeadManagement().catch((error) => {
   console.error("Lead management setup error:", error);
 });
+
 // Health check
 app.get("/api/healthz", (req, res) => {
   res.json({
@@ -133,6 +136,7 @@ app.post("/api/leads", async (req, res) => {
     });
   }
 });
+
 // View all saved leads - password protected
 app.get("/api/leads", async (req, res) => {
   const password = req.headers["x-dashboard-password"];
@@ -162,6 +166,7 @@ app.get("/api/leads", async (req, res) => {
     });
   }
 });
+
 // Update a lead
 app.put("/api/leads/:id", async (req, res) => {
   const password = req.headers["x-dashboard-password"];
@@ -210,6 +215,47 @@ app.put("/api/leads/:id", async (req, res) => {
     });
   }
 });
+
+// Delete a lead
+app.delete("/api/leads/:id", async (req, res) => {
+  const password = req.headers["x-dashboard-password"];
+
+  if (!password || password !== process.env.DASHBOARD_PASSWORD) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized"
+    });
+  }
+
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query(
+      "DELETE FROM leads WHERE id = $1 RETURNING *",
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Lead not found."
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Lead deleted successfully."
+    });
+  } catch (error) {
+    console.error("Error deleting lead:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Unable to delete lead."
+    });
+  }
+});
+
 const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, "0.0.0.0", () => {
