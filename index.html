@@ -1,8 +1,10 @@
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>SecureLife | Life Insurance Quotes</title>
 
   <link rel="stylesheet" href="style.css">
@@ -28,7 +30,8 @@
         <h1>Protect The People You Love</h1>
 
         <p class="subtitle">
-          Explore life insurance options designed to help protect your family's financial future.
+          Explore life insurance options designed to help protect your
+          family's financial future.
         </p>
 
         <div class="benefits">
@@ -37,7 +40,7 @@
           <span>✓ Compare Your Options</span>
         </div>
 
-        <form action="#" method="post">
+        <form id="quoteForm">
 
           <h2>Get Your Free Quote</h2>
 
@@ -49,22 +52,26 @@
 
             <div class="form-group">
               <label for="firstName">First Name</label>
+
               <input
                 type="text"
                 id="firstName"
                 name="firstName"
                 placeholder="First Name"
+                autocomplete="given-name"
                 required
               >
             </div>
 
             <div class="form-group">
               <label for="lastName">Last Name</label>
+
               <input
                 type="text"
                 id="lastName"
                 name="lastName"
                 placeholder="Last Name"
+                autocomplete="family-name"
                 required
               >
             </div>
@@ -73,38 +80,45 @@
 
           <div class="form-group">
             <label for="email">Email Address</label>
+
             <input
               type="email"
               id="email"
               name="email"
               placeholder="you@example.com"
+              autocomplete="email"
               required
             >
           </div>
 
           <div class="form-group">
             <label for="phone">Phone Number</label>
+
             <input
               type="tel"
               id="phone"
               name="phone"
               placeholder="(555) 555-5555"
+              autocomplete="tel"
               required
             >
           </div>
 
           <div class="form-group">
             <label for="zip">ZIP Code</label>
+
             <input
               type="text"
               id="zip"
               name="zip"
               placeholder="ZIP Code"
+              autocomplete="postal-code"
+              inputmode="numeric"
+              pattern="[0-9]{5}"
               maxlength="5"
               required
             >
           </div>
-
 
           <!-- AGE SLIDER -->
 
@@ -136,7 +150,6 @@
 
           </div>
 
-
           <!-- COVERAGE SLIDER -->
 
           <div class="form-group slider-group">
@@ -167,60 +180,56 @@
 
           </div>
 
+          <!-- CURRENT INSURANCE DROPDOWN -->
 
-          <!-- CURRENT INSURANCE SLIDER -->
-
-          <div class="form-group slider-group">
+          <div class="form-group">
 
             <label for="insurance">
               Do you currently have life insurance?
             </label>
 
-            <div class="slider-value" id="insuranceValue">
-              No
-            </div>
-
-            <input
-              type="range"
+            <select
               id="insurance"
               name="insurance"
-              min="0"
-              max="2"
-              value="0"
-              step="1"
               required
             >
+              <option value="" selected disabled>
+                Select an answer
+              </option>
 
-            <div class="slider-labels insurance-labels">
-              <span>No</span>
-              <span>Not Sure</span>
-              <span>Yes</span>
-            </div>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+              <option value="not-sure">Not sure</option>
+            </select>
 
           </div>
 
-
           <!-- CONSENT -->
 
-          <div class="form-group">
+          <div class="form-group consent-group">
 
-            <label>
+            <label for="consent">
+
               <input
                 type="checkbox"
                 id="consent"
+                name="consent"
                 required
               >
 
-              I agree to be contacted regarding life insurance options.
+              <span>
+                I agree to be contacted regarding life insurance options.
+              </span>
+
             </label>
 
           </div>
 
-
-          <button type="submit">
+          <button type="submit" id="submitButton">
             Get My Free Quote
           </button>
 
+          <p class="form-message" id="formMessage"></p>
 
           <p class="privacy-note">
             Your information is kept private and is used to help connect you
@@ -238,7 +247,6 @@
       </div>
 
     </section>
-
 
     <section class="why-section">
 
@@ -258,7 +266,6 @@
 
         </div>
 
-
         <div class="trust-item">
 
           <div class="icon">✓</div>
@@ -270,7 +277,6 @@
           </p>
 
         </div>
-
 
         <div class="trust-item">
 
@@ -290,7 +296,6 @@
 
   </main>
 
-
   <footer>
 
     <p>
@@ -303,7 +308,6 @@
     </p>
 
   </footer>
-
 
   <script src="script.js"></script>
 
