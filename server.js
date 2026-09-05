@@ -15,19 +15,6 @@ async function setupLeadManagement() {
 setupLeadManagement().catch((error) => {
   console.error("Lead management error:", error);
 });
-
-PostgreSQL does support adding a column with ADD COLUMN IF NOT EXISTS, so the database change itself is correct.
-
-Don't change anything else in server.js.
-
-Once you've replaced that section, commit it and tell me when it's committed.
-
-just give me an entire new code to enter
-
-Absolutely. Let's avoid piecing together sections. Replace your entire server.js with this complete version.
-
-This keeps everything that is currently working and adds the new source field. PostgreSQL's ADD COLUMN IF NOT EXISTS safely adds the field without deleting your existing leads.
-
 const express = require("express");
 const cors = require("cors");
 const { Pool } = require("pg");
