@@ -162,6 +162,54 @@ app.get("/api/leads", async (req, res) => {
     });
   }
 });
+// Update a lead
+app.put("/api/leads/:id", async (req, res) => {
+  const password = req.headers["x-dashboard-password"];
+
+  if (!password || password !== process.env.DASHBOARD_PASSWORD) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized"
+    });
+  }
+
+  const { id } = req.params;
+  const { status, notes, buyer, price } = req.body;
+
+  try {
+    const result = await pool.query(
+      `
+      UPDATE leads
+      SET status = $1,
+          notes = $2,
+          buyer = $3,
+          price = $4
+      WHERE id = $5
+      RETURNING *
+      `,
+      [status, notes, buyer, price, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Lead not found."
+      });
+    }
+
+    res.json({
+      success: true,
+      lead: result.rows[0]
+    });
+  } catch (error) {
+    console.error("Error updating lead:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Unable to update lead."
+    });
+  }
+});
 const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, "0.0.0.0", () => {
