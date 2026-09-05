@@ -85,7 +85,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 1700px;
+      min-width: 1900px;
     }
 
     th, td {
@@ -136,7 +136,7 @@
       class="search-box"
       type="text"
       id="searchInput"
-      placeholder="Search by name, email, phone, ZIP, or buyer..."
+      placeholder="Search by name, email, phone, ZIP, buyer, or source..."
       oninput="filterLeads()"
     >
 
@@ -154,6 +154,7 @@
             <th>Age</th>
             <th>Coverage</th>
             <th>Insurance</th>
+            <th>Source</th>
             <th>Status</th>
             <th>Notes</th>
             <th>Buyer</th>
@@ -210,7 +211,8 @@
       } catch (error) {
 
         console.error(error);
-        error.textContent = "Unable to connect to the server.";
+        document.getElementById("error").textContent =
+          "Unable to connect to the server.";
 
       }
     }
@@ -227,13 +229,31 @@
 
         row.innerHTML = `
           <td>${lead.id}</td>
-          <td>${lead.first_name} ${lead.last_name}</td>
+
+          <td>
+            ${lead.first_name} ${lead.last_name}
+          </td>
+
           <td>${lead.email}</td>
+
           <td>${lead.phone}</td>
+
           <td>${lead.zip}</td>
+
           <td>${lead.age}</td>
+
           <td>${lead.coverage}</td>
+
           <td>${lead.insurance}</td>
+
+          <td>
+            <input
+              type="text"
+              id="source-${lead.id}"
+              value="${lead.source || ""}"
+              placeholder="Google Ads"
+            >
+          </td>
 
           <td>
             <select id="status-${lead.id}">
@@ -268,9 +288,12 @@
             >
           </td>
 
-          <td>${new Date(lead.created_at).toLocaleString()}</td>
+          <td>
+            ${new Date(lead.created_at).toLocaleString()}
+          </td>
 
           <td>
+
             <button
               class="save-button"
               onclick="saveLead(${lead.id})"
@@ -284,6 +307,7 @@
             >
               Delete
             </button>
+
           </td>
         `;
 
@@ -302,11 +326,29 @@
       const filteredLeads = allLeads.filter(lead => {
 
         return (
-          `${lead.first_name} ${lead.last_name}`.toLowerCase().includes(search) ||
-          lead.email.toLowerCase().includes(search) ||
-          lead.phone.toLowerCase().includes(search) ||
-          lead.zip.toLowerCase().includes(search) ||
-          (lead.buyer || "").toLowerCase().includes(search)
+          `${lead.first_name} ${lead.last_name}`
+            .toLowerCase()
+            .includes(search) ||
+
+          lead.email
+            .toLowerCase()
+            .includes(search) ||
+
+          lead.phone
+            .toLowerCase()
+            .includes(search) ||
+
+          lead.zip
+            .toLowerCase()
+            .includes(search) ||
+
+          (lead.buyer || "")
+            .toLowerCase()
+            .includes(search) ||
+
+          (lead.source || "")
+            .toLowerCase()
+            .includes(search)
         );
 
       });
@@ -316,12 +358,23 @@
 
     async function saveLead(id) {
 
-      const status = document.getElementById(`status-${id}`).value;
-      const notes = document.getElementById(`notes-${id}`).value;
-      const buyer = document.getElementById(`buyer-${id}`).value;
-      const price = document.getElementById(`price-${id}`).value;
+      const status =
+        document.getElementById(`status-${id}`).value;
 
-      const saveMessage = document.getElementById("saveMessage");
+      const notes =
+        document.getElementById(`notes-${id}`).value;
+
+      const buyer =
+        document.getElementById(`buyer-${id}`).value;
+
+      const price =
+        document.getElementById(`price-${id}`).value;
+
+      const source =
+        document.getElementById(`source-${id}`).value;
+
+      const saveMessage =
+        document.getElementById("saveMessage");
 
       saveMessage.textContent = "";
 
@@ -341,7 +394,8 @@
               status,
               notes,
               buyer,
-              price
+              price,
+              source
             })
           }
         );
@@ -349,25 +403,34 @@
         const result = await response.json();
 
         if (!response.ok) {
-          saveMessage.textContent = result.message || "Unable to save changes.";
+
+          saveMessage.textContent =
+            result.message || "Unable to save changes.";
+
           saveMessage.className = "error";
+
           return;
         }
 
-        const index = allLeads.findIndex(lead => lead.id === id);
+        const index =
+          allLeads.findIndex(lead => lead.id === id);
 
         if (index !== -1) {
           allLeads[index] = result.lead;
         }
 
-        saveMessage.textContent = `Lead #${id} updated successfully.`;
+        saveMessage.textContent =
+          `Lead #${id} updated successfully.`;
+
         saveMessage.className = "success";
 
       } catch (error) {
 
         console.error(error);
 
-        saveMessage.textContent = "Unable to save changes.";
+        saveMessage.textContent =
+          "Unable to save changes.";
+
         saveMessage.className = "error";
 
       }
@@ -399,11 +462,16 @@
         const result = await response.json();
 
         if (!response.ok) {
-          alert(result.message || "Unable to delete lead.");
+
+          alert(
+            result.message || "Unable to delete lead."
+          );
+
           return;
         }
 
-        allLeads = allLeads.filter(lead => lead.id !== id);
+        allLeads =
+          allLeads.filter(lead => lead.id !== id);
 
         filterLeads();
 
@@ -413,6 +481,7 @@
       } catch (error) {
 
         console.error(error);
+
         alert("Unable to delete lead.");
 
       }
