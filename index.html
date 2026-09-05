@@ -105,68 +105,133 @@
             >
           </div>
 
-          <div class="form-group">
-            <label for="age">What is your age?</label>
 
-            <select id="age" name="age" required>
-              <option value="">Select your age</option>
-              <option value="18-24">18–24</option>
-              <option value="25-34">25–34</option>
-              <option value="35-44">35–44</option>
-              <option value="45-54">45–54</option>
-              <option value="55-64">55–64</option>
-              <option value="65+">65+</option>
-            </select>
+          <!-- AGE SLIDER -->
+
+          <div class="form-group slider-group">
+
+            <label for="age">
+              What is your age?
+            </label>
+
+            <div class="slider-value" id="ageValue">
+              35
+            </div>
+
+            <input
+              type="range"
+              id="age"
+              name="age"
+              min="18"
+              max="80"
+              value="35"
+              step="1"
+              required
+            >
+
+            <div class="slider-labels">
+              <span>18</span>
+              <span>80</span>
+            </div>
+
           </div>
 
-          <div class="form-group">
+
+          <!-- COVERAGE SLIDER -->
+
+          <div class="form-group slider-group">
+
             <label for="coverage">
               How much coverage are you interested in?
             </label>
 
-            <select id="coverage" name="coverage" required>
-              <option value="">Select coverage amount</option>
-              <option value="under-25k">Under $25,000</option>
-              <option value="25k-50k">$25,000–$50,000</option>
-              <option value="50k-100k">$50,000–$100,000</option>
-              <option value="100k-250k">$100,000–$250,000</option>
-              <option value="250k-plus">$250,000+</option>
-              <option value="not-sure">I'm not sure</option>
-            </select>
+            <div class="slider-value" id="coverageValue">
+              $250,000
+            </div>
+
+            <input
+              type="range"
+              id="coverage"
+              name="coverage"
+              min="25000"
+              max="1000000"
+              value="250000"
+              step="25000"
+              required
+            >
+
+            <div class="slider-labels">
+              <span>$25K</span>
+              <span>$1M</span>
+            </div>
+
           </div>
 
-          <div class="form-group">
+
+          <!-- CURRENT INSURANCE SLIDER -->
+
+          <div class="form-group slider-group">
+
             <label for="insurance">
               Do you currently have life insurance?
             </label>
 
-            <select id="insurance" name="insurance" required>
-              <option value="">Select an option</option>
-              <option value="yes">Yes</option>
-              <option value="no">No</option>
-              <option value="not-sure">I'm not sure</option>
-            </select>
+            <div class="slider-value" id="insuranceValue">
+              No
+            </div>
+
+            <input
+              type="range"
+              id="insurance"
+              name="insurance"
+              min="0"
+              max="2"
+              value="0"
+              step="1"
+              required
+            >
+
+            <div class="slider-labels insurance-labels">
+              <span>No</span>
+              <span>Not Sure</span>
+              <span>Yes</span>
+            </div>
+
           </div>
-         <div class="form-group">
-        <label>
-        <input type="checkbox" id="consent" required>
-        I agree to be contacted regarding life insurance options.
-        </label>
-        </div>
+
+
+          <!-- CONSENT -->
+
+          <div class="form-group">
+
+            <label>
+              <input
+                type="checkbox"
+                id="consent"
+                required
+              >
+
+              I agree to be contacted regarding life insurance options.
+            </label>
+
+          </div>
+
+
           <button type="submit">
             Get My Free Quote
           </button>
 
-         <p class="privacy-note">
-  Your information is kept private and is used to help connect you
-  with life insurance options.
-</p>
 
-<p class="privacy-note">
-  <a href="privacy-policy.html" target="_blank">
-    Privacy Policy
-  </a>
-</p>
+          <p class="privacy-note">
+            Your information is kept private and is used to help connect you
+            with life insurance options.
+          </p>
+
+          <p class="privacy-note">
+            <a href="privacy-policy.html" target="_blank">
+              Privacy Policy
+            </a>
+          </p>
 
         </form>
 
@@ -182,6 +247,7 @@
       <div class="trust-items">
 
         <div class="trust-item">
+
           <div class="icon">✓</div>
 
           <h3>Financial Protection</h3>
@@ -189,9 +255,12 @@
           <p>
             Help provide financial support for the people who depend on you.
           </p>
+
         </div>
 
+
         <div class="trust-item">
+
           <div class="icon">✓</div>
 
           <h3>Peace of Mind</h3>
@@ -199,9 +268,12 @@
           <p>
             Help prepare your loved ones for the unexpected.
           </p>
+
         </div>
 
+
         <div class="trust-item">
+
           <div class="icon">✓</div>
 
           <h3>Explore Your Options</h3>
@@ -209,6 +281,7 @@
           <p>
             Learn about coverage options that may fit your individual needs.
           </p>
+
         </div>
 
       </div>
@@ -230,7 +303,10 @@
     </p>
 
   </footer>
-<script src="script.js"></script>
+
+
+  <script src="script.js"></script>
+
 </body>
 
 </html>
