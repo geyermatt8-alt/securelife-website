@@ -21,10 +21,7 @@
       color: #222;
     }
 
-    h1 {
-      margin-top: 0;
-    }
-
+    h1,
     h2 {
       margin-top: 0;
     }
@@ -91,10 +88,6 @@
       margin-bottom: 20px;
     }
 
-    .buyer-form input {
-      margin: 0;
-    }
-
     .search-box {
       max-width: 500px;
       margin-bottom: 20px;
@@ -109,7 +102,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 1200px;
+      min-width: 1400px;
     }
 
     .buyers-table {
@@ -131,10 +124,18 @@
     .save-button {
       background: #1677ff;
       margin-bottom: 8px;
+      width: 100%;
+    }
+
+    .deliver-button {
+      background: #168a45;
+      margin-bottom: 8px;
+      width: 100%;
     }
 
     .delete-button {
       background: #d32f2f;
+      width: 100%;
     }
 
     .success {
@@ -145,6 +146,10 @@
     .error {
       color: red;
       margin-top: 10px;
+    }
+
+    .delivery-status {
+      font-weight: bold;
     }
 
     @media (max-width: 900px) {
@@ -239,9 +244,7 @@
       </div>
 
 
-      <div
-        id="buyerMessage"
-      ></div>
+      <div id="buyerMessage"></div>
 
 
       <div class="table-container">
@@ -251,32 +254,22 @@
           <thead>
 
             <tr>
-
               <th>Agency</th>
-
               <th>Contact</th>
-
               <th>Email</th>
-
               <th>Phone</th>
-
               <th>Active</th>
-
             </tr>
 
           </thead>
 
-
-          <tbody id="buyersTable">
-
-          </tbody>
+          <tbody id="buyersTable"></tbody>
 
         </table>
 
       </div>
 
     </div>
-
 
 
     <!-- LEADS -->
@@ -297,9 +290,7 @@
       >
 
 
-      <div
-        id="saveMessage"
-      ></div>
+      <div id="saveMessage"></div>
 
 
       <div class="table-container">
@@ -311,43 +302,26 @@
             <tr>
 
               <th>ID</th>
-
               <th>Name</th>
-
               <th>Email</th>
-
               <th>Phone</th>
-
               <th>ZIP</th>
-
               <th>Age</th>
-
               <th>Coverage</th>
-
               <th>Insurance</th>
-
               <th>Source</th>
-
               <th>Status</th>
-
               <th>Notes</th>
-
               <th>Buyer</th>
-
               <th>Price</th>
-
               <th>Date</th>
-
               <th>Action</th>
 
             </tr>
 
           </thead>
 
-
-          <tbody id="leadsTable">
-
-          </tbody>
+          <tbody id="leadsTable"></tbody>
 
         </table>
 
@@ -363,19 +337,20 @@
   <script>
 
 
-    /* =========================
-       GLOBAL VARIABLES
-    ========================= */
+    // =========================
+    // GLOBAL VARIABLES
+    // =========================
 
     let dashboardPassword = "";
 
     let allLeads = [];
 
+    let allBuyers = [];
 
 
-    /* =========================
-       LOGIN
-    ========================= */
+    // =========================
+    // LOGIN
+    // =========================
 
     async function login() {
 
@@ -410,6 +385,7 @@
             "Incorrect password.";
 
           return;
+
         }
 
 
@@ -428,9 +404,9 @@
         ).style.display = "block";
 
 
-        displayLeads(allLeads);
+        await loadBuyers();
 
-        loadBuyers();
+        displayLeads(allLeads);
 
       }
 
@@ -449,10 +425,9 @@
     }
 
 
-
-    /* =========================
-       DISPLAY LEADS
-    ========================= */
+    // =========================
+    // DISPLAY LEADS
+    // =========================
 
     function displayLeads(leads) {
 
@@ -467,6 +442,37 @@
 
         const row =
           document.createElement("tr");
+
+
+        let buyerOptions = `
+          <option value="">
+            Select buyer
+          </option>
+        `;
+
+
+        allBuyers
+          .filter(function(buyer) {
+            return buyer.active;
+          })
+          .forEach(function(buyer) {
+
+            const selected =
+              lead.buyer === buyer.agency_name
+                ? "selected"
+                : "";
+
+
+            buyerOptions += `
+              <option
+                value="${buyer.id}"
+                ${selected}
+              >
+                ${buyer.agency_name}
+              </option>
+            `;
+
+          });
 
 
         row.innerHTML = `
@@ -504,7 +510,6 @@
             ${lead.insurance}
           </td>
 
-
           <td>
 
             <input
@@ -519,9 +524,7 @@
 
           <td>
 
-            <select
-              id="status-${lead.id}"
-            >
+            <select id="status-${lead.id}">
 
               <option
                 value="New"
@@ -535,6 +538,13 @@
                 ${lead.status === "Contacted" ? "selected" : ""}
               >
                 Contacted
+              </option>
+
+              <option
+                value="Delivered"
+                ${lead.status === "Delivered" ? "selected" : ""}
+              >
+                Delivered
               </option>
 
               <option
@@ -574,12 +584,13 @@
 
           <td>
 
-            <input
-              type="text"
+            <select
               id="buyer-${lead.id}"
-              value="${lead.buyer || ""}"
-              placeholder="Insurance agency"
             >
+
+              ${buyerOptions}
+
+            </select>
 
           </td>
 
@@ -617,6 +628,14 @@
 
 
             <button
+              class="deliver-button"
+              onclick="deliverLead(${lead.id})"
+            >
+              Deliver Lead
+            </button>
+
+
+            <button
               class="delete-button"
               onclick="deleteLead(${lead.id})"
             >
@@ -635,10 +654,9 @@
     }
 
 
-
-    /* =========================
-       SEARCH LEADS
-    ========================= */
+    // =========================
+    // SEARCH
+    // =========================
 
     function filterLeads() {
 
@@ -698,10 +716,9 @@
     }
 
 
-
-    /* =========================
-       SAVE LEAD
-    ========================= */
+    // =========================
+    // SAVE LEAD
+    // =========================
 
     async function saveLead(id) {
 
@@ -717,10 +734,26 @@
         ).value;
 
 
-      const buyer =
+      const buyerSelect =
         document.getElementById(
           `buyer-${id}`
-        ).value;
+        );
+
+
+      const buyerId =
+        buyerSelect.value;
+
+
+      const selectedBuyer =
+        allBuyers.find(function(buyer) {
+          return String(buyer.id) === String(buyerId);
+        });
+
+
+      const buyer =
+        selectedBuyer
+          ? selectedBuyer.agency_name
+          : "";
 
 
       const price =
@@ -839,10 +872,182 @@
     }
 
 
+    // =========================
+    // DELIVER LEAD
+    // =========================
 
-    /* =========================
-       DELETE LEAD
-    ========================= */
+    async function deliverLead(id) {
+
+      const buyerId =
+        document.getElementById(
+          `buyer-${id}`
+        ).value;
+
+
+      const price =
+        document.getElementById(
+          `price-${id}`
+        ).value;
+
+
+      if (!buyerId) {
+
+        alert(
+          "Please select a buyer first."
+        );
+
+        return;
+
+      }
+
+
+      const buyer =
+        allBuyers.find(function(item) {
+
+          return String(item.id) ===
+            String(buyerId);
+
+        });
+
+
+      if (!buyer) {
+
+        alert(
+          "Buyer not found."
+        );
+
+        return;
+
+      }
+
+
+      const confirmed =
+        confirm(
+          `Deliver Lead #${id} to ${buyer.agency_name}?`
+        );
+
+
+      if (!confirmed) {
+
+        return;
+
+      }
+
+
+      const message =
+        document.getElementById(
+          "saveMessage"
+        );
+
+
+      message.textContent =
+        "Delivering lead...";
+
+      message.className = "";
+
+
+      try {
+
+        const response =
+          await fetch(
+
+            `https://securelife-backend-0ukl.onrender.com/api/leads/${id}/deliver`,
+
+            {
+
+              method: "POST",
+
+              headers: {
+
+                "Content-Type":
+                  "application/json",
+
+                "x-dashboard-password":
+                  dashboardPassword
+
+              },
+
+              body:
+                JSON.stringify({
+
+                  buyerId,
+                  price
+
+                })
+
+            }
+
+          );
+
+
+        const result =
+          await response.json();
+
+
+        if (!response.ok) {
+
+          message.textContent =
+            result.message ||
+            "Unable to deliver lead.";
+
+          message.className =
+            "error";
+
+          return;
+
+        }
+
+
+        const index =
+          allLeads.findIndex(
+            function(lead) {
+              return lead.id === id;
+            }
+          );
+
+
+        if (index !== -1) {
+
+          allLeads[index].buyer =
+            buyer.agency_name;
+
+          allLeads[index].status =
+            "Delivered";
+
+        }
+
+
+        message.textContent =
+          result.message ||
+          `Lead #${id} delivered successfully.`;
+
+        message.className =
+          "success";
+
+
+        displayLeads(allLeads);
+
+      }
+
+
+      catch (error) {
+
+        console.error(error);
+
+        message.textContent =
+          "Unable to deliver lead.";
+
+        message.className =
+          "error";
+
+      }
+
+    }
+
+
+    // =========================
+    // DELETE LEAD
+    // =========================
 
     async function deleteLead(id) {
 
@@ -930,10 +1135,9 @@
     }
 
 
-
-    /* =========================
-       ADD BUYER
-    ========================= */
+    // =========================
+    // ADD BUYER
+    // =========================
 
     async function addBuyer() {
 
@@ -1068,7 +1272,9 @@
         ).value = "";
 
 
-        loadBuyers();
+        await loadBuyers();
+
+        displayLeads(allLeads);
 
       }
 
@@ -1088,10 +1294,9 @@
     }
 
 
-
-    /* =========================
-       LOAD BUYERS
-    ========================= */
+    // =========================
+    // LOAD BUYERS
+    // =========================
 
     async function loadBuyers() {
 
@@ -1127,6 +1332,10 @@
         }
 
 
+        allBuyers =
+          result.buyers || [];
+
+
         const table =
           document.getElementById(
             "buyersTable"
@@ -1136,7 +1345,7 @@
         table.innerHTML = "";
 
 
-        result.buyers.forEach(
+        allBuyers.forEach(
           function(buyer) {
 
             const row =
