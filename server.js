@@ -1,39 +1,3 @@
-// Add lead management fields 
-async function setupLeadManagement() {
-  await pool.query(`
-    ALTER TABLE leads
-    ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'New',
-    ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT '',
-    ADD COLUMN IF NOT EXISTS buyer TEXT DEFAULT '',
-    ADD COLUMN IF NOT EXISTS price NUMERIC DEFAULT 0,
-    ADD COLUMN IF NOT EXISTS source TEXT DEFAULT ''
-  `);
-
-  console.log("Lead management fields ready");
-}
-// Create buyers table
-async function setupBuyers() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS buyers (
-      id SERIAL PRIMARY KEY,
-      agency_name TEXT NOT NULL,
-      contact_name TEXT DEFAULT '',
-      email TEXT DEFAULT '',
-      phone TEXT DEFAULT '',
-      active BOOLEAN DEFAULT TRUE,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  console.log("Buyers table ready");
-}
-
-setupBuyers().catch((error) => {
-  console.error("Buyers setup error:", error);
-});
-setupLeadManagement().catch((error) => {
-  console.error("Lead management error:", error);
-});
 const express = require("express");
 const cors = require("cors");
 const { Pool } = require("pg");
@@ -91,6 +55,27 @@ async function setupLeadManagement() {
 
 setupLeadManagement().catch((error) => {
   console.error("Lead management error:", error);
+});
+
+// Create buyers table
+async function setupBuyers() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS buyers (
+      id SERIAL PRIMARY KEY,
+      agency_name TEXT NOT NULL,
+      contact_name TEXT DEFAULT '',
+      email TEXT DEFAULT '',
+      phone TEXT DEFAULT '',
+      active BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  console.log("Buyers table ready");
+}
+
+setupBuyers().catch((error) => {
+  console.error("Buyers setup error:", error);
 });
 
 // Health check
@@ -303,6 +288,199 @@ app.delete("/api/leads/:id", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Unable to delete lead."
+    });
+  }
+});
+
+// Add a buyer
+app.post("/api/buyers", async (req, res) => {
+  const password = req.headers["x-dashboard-password"];
+
+  if (!password || password !== process.env.DASHBOARD_PASSWORD) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized"
+    });
+  }
+
+  const {
+    agencyName,
+    contactName,
+    email,
+    phone
+  } = req.body;
+
+  if (!agencyName) {
+    return res.status(400).json({
+      success: false,
+      message: "Agency name is required."
+    });
+  }
+
+  try {
+    const result = await pool.query(
+      `
+      INSERT INTO buyers
+      (
+        agency_name,
+        contact_name,
+        email,
+        phone
+      )
+      VALUES ($1, $2, $3, $4)
+      RETURNING *
+      `,
+      [
+        agencyName,
+        contactName || "",
+        email || "",
+        phone || ""
+      ]
+    );
+
+    res.status(201).json({
+      success: true,
+      buyer: result.rows[0]
+    });
+  } catch (error) {
+    console.error("Error adding buyer:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Unable to add buyer."
+    });
+  }
+});
+
+// Get all buyers
+app.get("/api/buyers", async (req, res) => {
+  const password = req.headers["x-dashboard-password"];
+
+  if (!password || password !== process.env.DASHBOARD_PASSWORD) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized"
+    });
+  }
+
+  try {
+    const result = await pool.query(
+      "SELECT * FROM buyers ORDER BY created_at DESC"
+    );
+
+    res.json({
+      success: true,
+      buyers: result.rows
+    });
+  } catch (error) {
+    console.error("Error retrieving buyers:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Unable to retrieve buyers."
+    });
+  }
+});
+
+// Update a buyer
+app.put("/api/buyers/:id", async (req, res) => {
+  const password = req.headers["x-dashboard-password"];
+
+  if (!password || password !== process.env.DASHBOARD_PASSWORD) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized"
+    });
+  }
+
+  const { id } = req.params;
+  const {
+    agencyName,
+    contactName,
+    email,
+    phone,
+    active
+  } = req.body;
+
+  try {
+    const result = await pool.query(
+      `
+      UPDATE buyers
+      SET agency_name = $1,
+          contact_name = $2,
+          email = $3,
+          phone = $4,
+          active = $5
+      WHERE id = $6
+      RETURNING *
+      `,
+      [
+        agencyName,
+        contactName || "",
+        email || "",
+        phone || "",
+        active,
+        id
+      ]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Buyer not found."
+      });
+    }
+
+    res.json({
+      success: true,
+      buyer: result.rows[0]
+    });
+  } catch (error) {
+    console.error("Error updating buyer:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Unable to update buyer."
+    });
+  }
+});
+
+// Delete a buyer
+app.delete("/api/buyers/:id", async (req, res) => {
+  const password = req.headers["x-dashboard-password"];
+
+  if (!password || password !== process.env.DASHBOARD_PASSWORD) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized"
+    });
+  }
+
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query(
+      "DELETE FROM buyers WHERE id = $1 RETURNING *",
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Buyer not found."
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Buyer deleted successfully."
+    });
+  } catch (error) {
+    console.error("Error deleting buyer:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Unable to delete buyer."
     });
   }
 });
