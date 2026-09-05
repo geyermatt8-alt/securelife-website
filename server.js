@@ -11,7 +11,26 @@ async function setupLeadManagement() {
 
   console.log("Lead management fields ready");
 }
+// Create buyers table
+async function setupBuyers() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS buyers (
+      id SERIAL PRIMARY KEY,
+      agency_name TEXT NOT NULL,
+      contact_name TEXT DEFAULT '',
+      email TEXT DEFAULT '',
+      phone TEXT DEFAULT '',
+      active BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 
+  console.log("Buyers table ready");
+}
+
+setupBuyers().catch((error) => {
+  console.error("Buyers setup error:", error);
+});
 setupLeadManagement().catch((error) => {
   console.error("Lead management error:", error);
 });
