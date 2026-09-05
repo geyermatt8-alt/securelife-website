@@ -32,7 +32,7 @@ form.addEventListener("submit", async (event) => {
     age: document.querySelector("#age").value,
     coverage: document.querySelector("#coverage").value,
     insurance: document.querySelector("#insurance").value,
-    consent: true
+    consent: true,
     source: leadSource
   };
 
