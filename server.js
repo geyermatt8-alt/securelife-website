@@ -38,7 +38,21 @@ async function setupDatabase() {
 setupDatabase().catch((error) => {
   console.error("Database setup error:", error);
 });
+async function setupLeadManagement() {
+  await pool.query(`
+    ALTER TABLE leads
+    ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'New',
+    ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT '',
+    ADD COLUMN IF NOT EXISTS buyer TEXT DEFAULT '',
+    ADD COLUMN IF NOT EXISTS price NUMERIC DEFAULT 0
+  `);
 
+  console.log("Lead management fields ready");
+}
+
+setupLeadManagement().catch((error) => {
+  console.error("Lead management setup error:", error);
+});
 // Health check
 app.get("/api/healthz", (req, res) => {
   res.json({
