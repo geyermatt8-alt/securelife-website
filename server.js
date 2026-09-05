@@ -1,3 +1,33 @@
+// Add lead management fields
+async function setupLeadManagement() {
+  await pool.query(`
+    ALTER TABLE leads
+    ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'New',
+    ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT '',
+    ADD COLUMN IF NOT EXISTS buyer TEXT DEFAULT '',
+    ADD COLUMN IF NOT EXISTS price NUMERIC DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS source TEXT DEFAULT ''
+  `);
+
+  console.log("Lead management fields ready");
+}
+
+setupLeadManagement().catch((error) => {
+  console.error("Lead management error:", error);
+});
+
+PostgreSQL does support adding a column with ADD COLUMN IF NOT EXISTS, so the database change itself is correct.
+
+Don't change anything else in server.js.
+
+Once you've replaced that section, commit it and tell me when it's committed.
+
+just give me an entire new code to enter
+
+Absolutely. Let's avoid piecing together sections. Replace your entire server.js with this complete version.
+
+This keeps everything that is currently working and adds the new source field. PostgreSQL's ADD COLUMN IF NOT EXISTS safely adds the field without deleting your existing leads.
+
 const express = require("express");
 const cors = require("cors");
 const { Pool } = require("pg");
@@ -46,14 +76,15 @@ async function setupLeadManagement() {
     ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'New',
     ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT '',
     ADD COLUMN IF NOT EXISTS buyer TEXT DEFAULT '',
-    ADD COLUMN IF NOT EXISTS price NUMERIC DEFAULT 0
+    ADD COLUMN IF NOT EXISTS price NUMERIC DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS source TEXT DEFAULT ''
   `);
 
   console.log("Lead management fields ready");
 }
 
 setupLeadManagement().catch((error) => {
-  console.error("Lead management setup error:", error);
+  console.error("Lead management error:", error);
 });
 
 // Health check
@@ -75,7 +106,8 @@ app.post("/api/leads", async (req, res) => {
     age,
     coverage,
     insurance,
-    consent
+    consent,
+    source
   } = req.body;
 
   if (
@@ -105,8 +137,19 @@ app.post("/api/leads", async (req, res) => {
     await pool.query(
       `
       INSERT INTO leads
-      (first_name, last_name, email, phone, zip, age, coverage, insurance, consent)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      (
+        first_name,
+        last_name,
+        email,
+        phone,
+        zip,
+        age,
+        coverage,
+        insurance,
+        consent,
+        source
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       `,
       [
         firstName,
@@ -117,7 +160,8 @@ app.post("/api/leads", async (req, res) => {
         age,
         coverage,
         insurance,
-        consent
+        consent,
+        source || ""
       ]
     );
 
@@ -179,7 +223,7 @@ app.put("/api/leads/:id", async (req, res) => {
   }
 
   const { id } = req.params;
-  const { status, notes, buyer, price } = req.body;
+  const { status, notes, buyer, price, source } = req.body;
 
   try {
     const result = await pool.query(
@@ -188,11 +232,12 @@ app.put("/api/leads/:id", async (req, res) => {
       SET status = $1,
           notes = $2,
           buyer = $3,
-          price = $4
-      WHERE id = $5
+          price = $4,
+          source = $5
+      WHERE id = $6
       RETURNING *
       `,
-      [status, notes, buyer, price, id]
+      [status, notes, buyer, price, source || "", id]
     );
 
     if (result.rows.length === 0) {
