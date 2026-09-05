@@ -27,27 +27,42 @@
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
 
-    input {
+    input, select, textarea {
       width: 100%;
-      padding: 12px;
-      margin: 10px 0;
+      padding: 10px;
+      margin: 5px 0;
       box-sizing: border-box;
       border: 1px solid #ccc;
       border-radius: 6px;
+      font-family: Arial, sans-serif;
+    }
+
+    textarea {
+      min-height: 70px;
+      resize: vertical;
     }
 
     button {
-      padding: 12px 20px;
+      padding: 10px 16px;
       border: none;
       border-radius: 6px;
       cursor: pointer;
       background: #222;
       color: white;
-      font-size: 15px;
+      font-size: 14px;
+    }
+
+    button:hover {
+      opacity: 0.85;
     }
 
     .error {
       color: red;
+      margin-top: 10px;
+    }
+
+    .success {
+      color: green;
       margin-top: 10px;
     }
 
@@ -65,17 +80,22 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 1000px;
+      min-width: 1500px;
     }
 
     th, td {
       padding: 12px;
       border-bottom: 1px solid #ddd;
       text-align: left;
+      vertical-align: top;
     }
 
     th {
       background: #eee;
+    }
+
+    .save-button {
+      background: #1677ff;
     }
   </style>
 </head>
@@ -102,6 +122,8 @@
     <h1>SecureLife Lead Dashboard</h1>
     <p>Your submitted leads</p>
 
+    <div class="success" id="saveMessage"></div>
+
     <div class="table-container">
       <table>
         <thead>
@@ -114,7 +136,12 @@
             <th>Age</th>
             <th>Coverage</th>
             <th>Insurance</th>
+            <th>Status</th>
+            <th>Notes</th>
+            <th>Buyer</th>
+            <th>Price</th>
             <th>Date</th>
+            <th>Action</th>
           </tr>
         </thead>
 
@@ -126,6 +153,8 @@
   </div>
 
   <script>
+    let dashboardPassword = "";
+
     async function login() {
 
       const password = document.getElementById("password").value;
@@ -151,37 +180,140 @@
           return;
         }
 
+        dashboardPassword = password;
+
         document.getElementById("loginBox").style.display = "none";
         document.getElementById("dashboard").style.display = "block";
 
-        const table = document.getElementById("leadsTable");
-
-        table.innerHTML = "";
-
-        result.leads.forEach(lead => {
-
-          const row = document.createElement("tr");
-
-          row.innerHTML = `
-            <td>${lead.id}</td>
-            <td>${lead.first_name} ${lead.last_name}</td>
-            <td>${lead.email}</td>
-            <td>${lead.phone}</td>
-            <td>${lead.zip}</td>
-            <td>${lead.age}</td>
-            <td>${lead.coverage}</td>
-            <td>${lead.insurance}</td>
-            <td>${new Date(lead.created_at).toLocaleString()}</td>
-          `;
-
-          table.appendChild(row);
-
-        });
+        displayLeads(result.leads);
 
       } catch (error) {
 
         console.error(error);
         error.textContent = "Unable to connect to the server.";
+
+      }
+    }
+
+    function displayLeads(leads) {
+
+      const table = document.getElementById("leadsTable");
+
+      table.innerHTML = "";
+
+      leads.forEach(lead => {
+
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+          <td>${lead.id}</td>
+          <td>${lead.first_name} ${lead.last_name}</td>
+          <td>${lead.email}</td>
+          <td>${lead.phone}</td>
+          <td>${lead.zip}</td>
+          <td>${lead.age}</td>
+          <td>${lead.coverage}</td>
+          <td>${lead.insurance}</td>
+
+          <td>
+            <select id="status-${lead.id}">
+              <option value="New" ${lead.status === "New" ? "selected" : ""}>New</option>
+              <option value="Contacted" ${lead.status === "Contacted" ? "selected" : ""}>Contacted</option>
+              <option value="Sold" ${lead.status === "Sold" ? "selected" : ""}>Sold</option>
+              <option value="Rejected" ${lead.status === "Rejected" ? "selected" : ""}>Rejected</option>
+              <option value="Unqualified" ${lead.status === "Unqualified" ? "selected" : ""}>Unqualified</option>
+            </select>
+          </td>
+
+          <td>
+            <textarea id="notes-${lead.id}">${lead.notes || ""}</textarea>
+          </td>
+
+          <td>
+            <input
+              type="text"
+              id="buyer-${lead.id}"
+              value="${lead.buyer || ""}"
+              placeholder="Insurance agency"
+            >
+          </td>
+
+          <td>
+            <input
+              type="number"
+              id="price-${lead.id}"
+              value="${lead.price || 0}"
+              step="0.01"
+              min="0"
+            >
+          </td>
+
+          <td>${new Date(lead.created_at).toLocaleString()}</td>
+
+          <td>
+            <button
+              class="save-button"
+              onclick="saveLead(${lead.id})"
+            >
+              Save
+            </button>
+          </td>
+        `;
+
+        table.appendChild(row);
+
+      });
+    }
+
+    async function saveLead(id) {
+
+      const status = document.getElementById(`status-${id}`).value;
+      const notes = document.getElementById(`notes-${id}`).value;
+      const buyer = document.getElementById(`buyer-${id}`).value;
+      const price = document.getElementById(`price-${id}`).value;
+
+      const saveMessage = document.getElementById("saveMessage");
+
+      saveMessage.textContent = "";
+
+      try {
+
+        const response = await fetch(
+          `https://securelife-backend-0ukl.onrender.com/api/leads/${id}`,
+          {
+            method: "PUT",
+
+            headers: {
+              "Content-Type": "application/json",
+              "x-dashboard-password": dashboardPassword
+            },
+
+            body: JSON.stringify({
+              status,
+              notes,
+              buyer,
+              price
+            })
+          }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          saveMessage.textContent = result.message || "Unable to save changes.";
+          saveMessage.className = "error";
+          return;
+        }
+
+        saveMessage.textContent = `Lead #${id} updated successfully.`;
+        saveMessage.className = "success";
+
+      } catch (error) {
+
+        console.error(error);
+
+        saveMessage.textContent = "Unable to save changes.";
+        saveMessage.className = "error";
 
       }
     }
