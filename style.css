@@ -40,15 +40,26 @@ body {
 
 
 /* =========================
-   HERO
+   HERO WITH BACKGROUND IMAGE
    ========================= */
 
 .hero {
   padding: 60px 20px 70px;
-  background: #f5f8fc;
+
+  background-image:
+    linear-gradient(
+      rgba(245, 248, 252, 0.82),
+      rgba(245, 248, 252, 0.9)
+    ),
+    url("family-home-hero-square.png.png");
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .hero-content {
+  width: 100%;
   max-width: 720px;
   margin: 0 auto;
   text-align: center;
@@ -58,7 +69,7 @@ body {
   display: inline-block;
   margin-bottom: 18px;
   padding: 8px 16px;
-  background: #e8f1fb;
+  background: rgba(232, 241, 251, 0.95);
   border-radius: 20px;
   color: #185a96;
   font-size: 14px;
@@ -75,7 +86,7 @@ h1 {
 .subtitle {
   max-width: 620px;
   margin: 0 auto 24px;
-  color: #667085;
+  color: #475467;
   font-size: 18px;
   line-height: 1.6;
 }
@@ -91,26 +102,7 @@ h1 {
   font-weight: 600;
 }
 
-/* =========================
-   HERO IMAGE
-   ========================= */
 
-.hero-image-wrapper {
-  width: 100%;
-  max-width: 680px;
-  margin: 0 auto 30px;
-  overflow: hidden;
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(16, 42, 67, 0.12);
-}
-
-.hero-image {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 1 / 1;
-  object-fit: cover;
-}
 /* =========================
    FORM
    ========================= */
@@ -120,9 +112,10 @@ form {
   max-width: 680px;
   margin: 0 auto;
   padding: 35px;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(208, 213, 221, 0.7);
   border-radius: 16px;
-  box-shadow: 0 10px 35px rgba(16, 42, 67, 0.08);
+  box-shadow: 0 12px 40px rgba(16, 42, 67, 0.15);
   text-align: left;
 }
 
@@ -452,6 +445,15 @@ footer {
 
   .hero {
     padding: 40px 15px 50px;
+
+    background-image:
+      linear-gradient(
+        rgba(245, 248, 252, 0.88),
+        rgba(245, 248, 252, 0.94)
+      ),
+      url("family-home-hero-square.png.png");
+
+    background-position: center;
   }
 
   h1 {
