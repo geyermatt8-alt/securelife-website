@@ -1,4 +1,4 @@
-// Add lead management fields
+// Add lead management fields 
 async function setupLeadManagement() {
   await pool.query(`
     ALTER TABLE leads
