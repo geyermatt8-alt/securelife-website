@@ -3,27 +3,28 @@
 // ==============================
 
 const urlParams = new URLSearchParams(window.location.search);
+const rawSource = urlParams.get("utm_source");
 
-let leadSource = urlParams.get("utm_source") || "";
+let leadSource = "Direct/Unknown";
 
-if (leadSource) {
-  leadSource = leadSource.toLowerCase();
+if (rawSource) {
+  const normalizedSource = rawSource.toLowerCase();
 
-  if (leadSource === "google") {
+  if (normalizedSource === "google") {
     leadSource = "Google";
   } else if (
-    leadSource === "facebook" ||
-    leadSource === "meta"
+    normalizedSource === "facebook" ||
+    normalizedSource === "meta"
   ) {
     leadSource = "Facebook";
-  } else if (leadSource === "instagram") {
+  } else if (normalizedSource === "instagram") {
     leadSource = "Instagram";
-  } else if (leadSource === "tiktok") {
+  } else if (normalizedSource === "tiktok") {
     leadSource = "TikTok";
   } else {
     leadSource =
-      leadSource.charAt(0).toUpperCase() +
-      leadSource.slice(1);
+      normalizedSource.charAt(0).toUpperCase() +
+      normalizedSource.slice(1);
   }
 }
 
@@ -196,7 +197,17 @@ form.addEventListener(
       );
 
 
-      const result = await response.json();
+      const responseText = await response.text();
+
+      let result;
+
+      try {
+        result = JSON.parse(responseText);
+      } catch {
+        throw new Error(
+          "The server returned an invalid response."
+        );
+      }
 
 
       if (!response.ok || !result.success) {
