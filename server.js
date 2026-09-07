@@ -744,7 +744,7 @@ app.post(
             </p>
 
             <p>
-              <strong leastPhone:</strong>
+             <strong>Phone:</strong> 
               ${lead.phone}
             </p>
 
