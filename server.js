@@ -114,10 +114,10 @@ async function syncLeadToGoogleSheet(lead) {
   try {
     result = JSON.parse(responseText);
   } catch {
-    throw new Error(
-      "Google Sheets returned an invalid response."
-    );
-  }
+  throw new Error(
+    `Google Sheets returned non-JSON (${response.status}): ${responseText.slice(0, 300)}`
+  );
+}
 
   if (!response.ok || result.success !== true) {
     throw new Error(
