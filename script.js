@@ -221,15 +221,9 @@ pageUrl:
       }
 
 
-      showMessage(
-        window.location.href = "thank-you.html";
-return;
+   window.location.href = "thank-you.html";
+return;   
 
-
-      form.reset();
-
-      updateAge();
-      updateCoverage();
 
     } catch (error) {
 
