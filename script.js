@@ -222,9 +222,8 @@ pageUrl:
 
 
       showMessage(
-        "Thank you! Your information has been received.",
-        "success"
-      );
+        window.location.href = "thank-you.html";
+return;
 
 
       form.reset();
