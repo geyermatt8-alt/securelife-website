@@ -4,6 +4,15 @@ const cors = require("cors");
 const { Pool } = require("pg");
 
 const app = express();
+
+app.set("trust proxy", 1);
+
+const CONSENT_VERSION =
+  "securelife-consent-v1-2026-09-08";
+
+const CONSENT_TEXT =
+  "By checking this box and submitting this form, I provide my electronic signature and agree that SecureLife may contact me by telephone, text message, or email regarding my life insurance request. I also authorize SecureLife to share my information with a licensed insurance agent or agency that may contact me about life insurance options. Consent is not a condition of purchasing any product or service. Message and data rates may apply. I can opt out of text messages by replying STOP. I have read the Privacy Policy.";
+
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
@@ -51,7 +60,13 @@ async function setupDatabase() {
     ADD COLUMN IF NOT EXISTS date_sold TIMESTAMP,
     ADD COLUMN IF NOT EXISTS refund_amount NUMERIC DEFAULT 0,
     ADD COLUMN IF NOT EXISTS refund_reason TEXT DEFAULT '',
-    ADD COLUMN IF NOT EXISTS refund_date TIMESTAMP
+    ADD COLUMN IF NOT EXISTS refund_date TIMESTAMP,
+    ADD COLUMN IF NOT EXISTS consent_version TEXT DEFAULT '',
+    ADD COLUMN IF NOT EXISTS consent_text TEXT DEFAULT '',
+    ADD COLUMN IF NOT EXISTS consent_timestamp TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS consent_ip TEXT DEFAULT '',
+    ADD COLUMN IF NOT EXISTS consent_user_agent TEXT DEFAULT '',
+    ADD COLUMN IF NOT EXISTS consent_page_url TEXT DEFAULT ''
   `);
 
   await pool.query(`
@@ -88,9 +103,11 @@ async function syncLeadToGoogleSheet(lead) {
     process.env.GOOGLE_SHEETS_WEBHOOK_URL,
     {
       method: "POST",
+
       headers: {
         "Content-Type": "application/json"
       },
+
       body: JSON.stringify({
         secret: process.env.SYNC_SECRET,
         id: lead.id,
@@ -114,15 +131,15 @@ async function syncLeadToGoogleSheet(lead) {
   try {
     result = JSON.parse(responseText);
   } catch {
-  throw new Error(
-    `Google Sheets returned non-JSON (${response.status}): ${responseText.slice(0, 300)}`
-  );
-}
+    throw new Error(
+      `Google Sheets returned non-JSON (${response.status}): ${responseText.slice(0, 300)}`
+    );
+  }
 
   if (!response.ok || result.success !== true) {
     throw new Error(
       result.message ||
-      `Google Sheets sync failed with status ${response.status}.`
+      `Google Sheets sync failed with status ${response.status}.}.`
     );
   }
 
@@ -135,7 +152,8 @@ async function syncLeadToGoogleSheet(lead) {
 // ========================================
 
 function authorizeDashboard(req, res, next) {
-  const password = req.headers["x-dashboard-password"];
+  const password =
+    req.headers["x-dashboard-password"];
 
   if (
     !password ||
@@ -167,7 +185,7 @@ app.get("/api/healthz", (req, res) => {
 // RECEIVE NEW LEAD
 // ========================================
 
-app.post("/api/leads", async (req, res) => {
+app.post("/api/le", async (req, res) => {
   const {
     firstName,
     lastName,
@@ -179,7 +197,8 @@ app.post("/api/leads", async (req, res) => {
     insurance,
     consent,
     source,
-    campaign
+    campaign,
+    pageUrl
   } = req.body;
 
   if (
@@ -205,6 +224,22 @@ app.post("/api/leads", async (req, res) => {
     });
   }
 
+  const forwardedFor =
+    req.headers["x-forwarded-for"];
+
+  const consentIp = forwardedFor
+    ? String(forwardedFor).split(",")[0].trim()
+    : req.ip || "";
+
+  const consentUserAgent =
+    req.get("user-agent") || "";
+
+  const consentPageUrl =
+    pageUrl ||
+    req.get("referer") ||
+    req.get("origin") ||
+    "";
+
   try {
     const insertResult = await pool.query(
       `
@@ -219,11 +254,18 @@ app.post("/api/leads", async (req, res) => {
         insurance,
         consent,
         source,
-        campaign
+        campaign,
+        consent_version,
+        consent_text,
+        consent_timestamp,
+        consent_ip,
+        consent_user_agent,
+        consent_page_url
       )
       VALUES (
         $1, $2, $3, $4, $5, $6,
-        $7, $8, $9, $10, $11
+        $7, $8, $9, $10, $11, $12,
+        $13, CURRENT_TIMESTAMP, $14, $15, $16
       )
       RETURNING *
       `,
@@ -237,8 +279,13 @@ app.post("/api/leads", async (req, res) => {
         coverage,
         insurance,
         consent,
-        source || "",
-        campaign || ""
+        source || "Direct/Unknown",
+        campaign || "",
+        CONSENT_VERSION,
+        CONSENT_TEXT,
+        consentIp,
+        consentUserAgent,
+        consentPageUrl
       ]
     );
 
@@ -350,9 +397,18 @@ app.put(
           source = COALESCE($5, source),
           campaign = COALESCE($6, campaign),
           date_sold = COALESCE($7, date_sold),
-          refund_amount = COALESCE($8, refund_amount),
-          refund_reason = COALESCE($9, refund_reason),
-          refund_date = COALESCE($10, refund_date)
+          refund_amount = COALESCE(
+            $8,
+            refund_amount
+          ),
+          refund_reason = COALESCE(
+            $9,
+            refund_reason
+          ),
+          refund_date = COALESCE(
+            $10,
+            refund_date
+          )
         WHERE id = $11
         RETURNING *
         `,
@@ -379,7 +435,9 @@ app.put(
       }
 
       try {
-        await syncLeadToGoogleSheet(result.rows[0]);
+        await syncLeadToGoogleSheet(
+          result.rows[0]
+        );
 
         console.log(
           `Lead #${id} update synced to Google Sheets`
@@ -423,7 +481,11 @@ app.delete(
 
     try {
       const result = await pool.query(
-        "DELETE FROM leads WHERE id = $1 RETURNING *",
+        `
+        DELETE FROM leads
+        WHERE id = $1
+        RETURNING *
+        `,
         [id]
       );
 
@@ -526,7 +588,11 @@ app.get(
   async (req, res) => {
     try {
       const result = await pool.query(
-        "SELECT * FROM buyers ORDER BY created_at DESC"
+        `
+        SELECT *
+        FROM buyers
+        ORDER BY created_at DESC
+        `
       );
 
       return res.json({
@@ -629,7 +695,11 @@ app.delete(
 
     try {
       const result = await pool.query(
-        "DELETE FROM buyers WHERE id = $1 RETURNING *",
+        `
+        DELETE FROM buyers
+        WHERE id = $1
+        RETURNING *
+        `,
         [id]
       );
 
@@ -678,9 +748,21 @@ app.post(
       });
     }
 
+    if (!resend) {
+      return res.status(500).json({
+        success: false,
+        message:
+          "Email delivery is not configured."
+      });
+    }
+
     try {
       const leadResult = await pool.query(
-        "SELECT * FROM leads WHERE id = $1",
+        `
+        SELECT *
+        FROM leads
+        WHERE id = $1
+        `,
         [id]
       );
 
@@ -724,7 +806,9 @@ app.post(
         await resend.emails.send({
           from: "leads@securelifeinsurances.com",
           to: [buyer.email],
-          subject: `New SecureLife Lead #${lead.id}`,
+          subject:
+            `New SecureLife Lead #${lead.id}`,
+
           html: `
             <h2>New SecureLife Lead</h2>
 
@@ -746,7 +830,7 @@ app.post(
             </p>
 
             <p>
-             <strong>Phone:</strong> 
+              <strong>Phone:</strong>
               ${lead.phone}
             </p>
 
