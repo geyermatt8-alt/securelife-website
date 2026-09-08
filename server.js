@@ -185,7 +185,7 @@ app.get("/api/healthz", (req, res) => {
 // RECEIVE NEW LEAD
 // ========================================
 
-app.post("/api/le", async (req, res) => {
+app.post("/api/leads", async (req, res) => {
   const {
     firstName,
     lastName,
