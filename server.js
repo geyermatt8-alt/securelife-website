@@ -148,6 +148,102 @@ async function syncLeadToGoogleSheet(lead) {
 
 
 // ========================================
+// NEW-LEAD NOTIFICATION EMAIL
+// ========================================
+
+async function sendLeadNotification(lead) {
+  if (!resend) {
+    console.warn(
+      "Lead notification email skipped: RESEND_API_KEY is not configured."
+    );
+    return false;
+  }
+
+  const recipients = (process.env.LEAD_NOTIFICATION_EMAIL || "")
+    .split(",")
+    .map((address) => address.trim())
+    .filter(Boolean);
+
+  if (recipients.length === 0) {
+    console.warn(
+      "Lead notification email skipped: LEAD_NOTIFICATION_EMAIL is not configured."
+    );
+    return false;
+  }
+
+  const from =
+    process.env.LEAD_NOTIFICATION_FROM ||
+    "leads@securelifeinsurances.com";
+
+  const { data, error } = await resend.emails.send({
+    from,
+    to: recipients,
+    subject:
+      `New SecureLife Lead #${lead.id} - ` +
+      `${lead.first_name} ${lead.last_name}`,
+
+    html: `
+      <h2>New SecureLife Lead</h2>
+
+      <p>A new life insurance lead was just submitted.</p>
+
+      <hr>
+
+      <p><strong>Name:</strong> ${lead.first_name} ${lead.last_name}</p>
+      <p><strong>Email:</strong> ${lead.email}</p>
+      <p><strong>Phone:</strong> ${lead.phone}</p>
+      <p><strong>ZIP:</strong> ${lead.zip}</p>
+      <p><strong>Age:</strong> ${lead.age}</p>
+      <p><strong>Coverage:</strong> ${lead.coverage}</p>
+      <p><strong>Currently insured:</strong> ${lead.insurance}</p>
+      <p><strong>Source:</strong> ${lead.source || "Direct/Unknown"}</p>
+      <p><strong>Campaign:</strong> ${lead.campaign || ""}</p>
+
+      <hr>
+
+      <p><strong>Lead ID:</strong> ${lead.id}</p>
+      <p><strong>Submitted:</strong> ${lead.created_at}</p>
+    `
+  });
+
+  if (error) {
+    throw new Error(
+      error.message || "Resend returned an error."
+    );
+  }
+
+  console.log(
+    `Lead #${lead.id} notification email sent (id: ${data ? data.id : "unknown"})`
+  );
+
+  return true;
+}
+
+
+// ========================================
+// BACKGROUND POST-SUBMISSION WORK
+// ========================================
+//
+// Runs the slow third-party integrations (reporting sync + notification
+// email) after the visitor already received their response, so neither the
+// latency nor the failure of these calls affects the submission experience.
+
+function processNewLeadSideEffects(lead) {
+  syncLeadToGoogleSheet(lead)
+    .then(() => {
+      console.log(`Lead #${lead.id} synced to Google Sheets`);
+    })
+    .catch((syncError) => {
+      console.error("Google Sheets sync error:", syncError);
+    });
+
+  sendLeadNotification(lead).catch((emailError) => {
+    console.error("Lead notification email error:", emailError);
+  });
+}
+
+
+// ========================================
 // DASHBOARD AUTHORIZATION
 // ========================================
 
@@ -290,33 +386,23 @@ app.post("/api/leads", async (req, res) => {
     );
 
     const savedLead = insertResult.rows[0];
-    let reportingSynced = true;
-
-    try {
-      await syncLeadToGoogleSheet(savedLead);
-
-      console.log(
-        `Lead #${savedLead.id} synced to Google Sheets`
-      );
-    } catch (syncError) {
-      reportingSynced = false;
-
-      console.error(
-        "Google Sheets sync error:",
-        syncError
-      );
-    }
 
     console.log(
       "New SecureLife lead saved to database"
     );
 
-    return res.status(201).json({
+    // Respond as soon as the lead is safely stored so the browser can
+    // redirect to the thank-you page immediately. The reporting sync and
+    // notification email are slow, third-party calls, so they run in the
+    // background and must never delay (or fail) the visitor's submission.
+    res.status(201).json({
       success: true,
       message: "Your information has been received.",
-      leadId: savedLead.id,
-      reportingSynced
+      leadId: savedLead.id
     });
+
+    processNewLeadSideEffects(savedLead);
+    return;
 
   } catch (error) {
     console.error("Database error:", error);
