@@ -7,321 +7,425 @@
 
   <title>SecureLife | Life Insurance Quotes</title>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
+    rel="stylesheet">
+
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-  <header class="header">
-    <div class="logo">SecureLife</div>
-    <div class="header-text">Simple. Secure. No Obligation.</div>
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="index.html">
+        <span class="mark">◆</span>
+        SecureLife
+      </a>
+
+      <input type="checkbox" id="navToggle" class="nav-toggle" hidden>
+      <label for="navToggle" class="nav-burger" aria-label="Open menu">☰</label>
+
+      <nav class="nav-links">
+        <a href="how-it-works.html">How It Works</a>
+        <a href="coverage.html">Coverage</a>
+        <a href="faq.html">FAQ</a>
+        <a href="about.html">About</a>
+        <a href="contact.html">Contact</a>
+        <a href="index.html#quote" class="btn btn-primary nav-cta">Get My Free Quote</a>
+      </nav>
+    </div>
   </header>
 
-  <main>
+  <main id="top">
 
+    <!-- HERO -->
     <section class="hero">
+      <div class="container hero-grid">
 
-      <div class="hero-content">
+        <div class="hero-copy">
+          <span class="eyebrow">★ Free • No obligation</span>
 
-        <div class="badge">
-          Free Life Insurance Quote
+          <h1>
+            Protect the people
+            <span class="accent">you love most</span>
+          </h1>
+
+          <p class="subtitle">
+            Explore life insurance options designed to help protect your
+            family's financial future — in just a couple of minutes.
+          </p>
+
+          <ul class="hero-list">
+            <li>
+              <span class="check">✓</span>
+              A quick, simple form — no medical exam to get started
+            </li>
+            <li>
+              <span class="check">✓</span>
+              Compare options with licensed insurance professionals
+            </li>
+            <li>
+              <span class="check">✓</span>
+              No cost and no obligation to buy
+            </li>
+          </ul>
+
+          <div class="hero-trust">
+            <span>🔒 Your information stays private</span>
+            <span>🛡️ Licensed agents</span>
+            <span>⚡ Takes ~2 minutes</span>
+          </div>
         </div>
 
-        <h1>Protect The People You Love</h1>
+        <!-- QUOTE FORM -->
+        <div class="quote-card" id="quote">
+          <div class="quote-card__head">
+            <h2>Get Your Free Quote</h2>
+            <p>Tell us a little about yourself to explore your options.</p>
+          </div>
 
-        <p class="subtitle">
-          Explore life insurance options designed to help protect your
-          family's financial future.
-        </p>
+          <form id="quoteForm">
 
-        <div class="benefits">
-          <span>✓ Fast & Simple</span>
-          <span>✓ No Obligation</span>
-          <span>✓ Compare Your Options</span>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="firstName">First Name</label>
+                <input
+                  type="text"
+                  id="firstName"
+                  name="firstName"
+                  placeholder="First Name"
+                  autocomplete="given-name"
+                  required
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="lastName">Last Name</label>
+                <input
+                  type="text"
+                  id="lastName"
+                  name="lastName"
+                  placeholder="Last Name"
+                  autocomplete="family-name"
+                  required
+                >
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email Address</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                placeholder="you@example.com"
+                autocomplete="email"
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="phone">Phone Number</label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                placeholder="(555) 555-5555"
+                autocomplete="tel"
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="zip">ZIP Code</label>
+              <input
+                type="text"
+                id="zip"
+                name="zip"
+                placeholder="ZIP Code"
+                autocomplete="postal-code"
+                inputmode="numeric"
+                pattern="[0-9]{5}"
+                maxlength="5"
+                required
+              >
+            </div>
+
+            <!-- AGE SLIDER -->
+            <div class="form-group slider-group">
+              <label for="age">What is your age?</label>
+              <div class="slider-value" id="ageValue">35</div>
+              <input
+                type="range"
+                id="age"
+                name="age"
+                min="18"
+                max="80"
+                value="35"
+                step="1"
+                required
+              >
+              <div class="slider-labels">
+                <span>18</span>
+                <span>80</span>
+              </div>
+            </div>
+
+            <!-- COVERAGE SLIDER -->
+            <div class="form-group slider-group">
+              <label for="coverage">
+                How much coverage are you interested in?
+              </label>
+              <div class="slider-value" id="coverageValue">$250,000</div>
+              <input
+                type="range"
+                id="coverage"
+                name="coverage"
+                min="25000"
+                max="1000000"
+                value="250000"
+                step="25000"
+                required
+              >
+              <div class="slider-labels">
+                <span>$25K</span>
+                <span>$1M</span>
+              </div>
+            </div>
+
+            <!-- CURRENT INSURANCE -->
+            <div class="form-group">
+              <label for="insurance">
+                Do you currently have life insurance?
+              </label>
+              <select id="insurance" name="insurance" required>
+                <option value="" selected disabled>Select an answer</option>
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+                <option value="not-sure">Not sure</option>
+              </select>
+            </div>
+
+            <!-- CONSENT -->
+            <div class="form-group consent-group">
+              <label for="consent">
+                <input type="checkbox" id="consent" name="consent" required>
+                <span>
+                  By checking this box and submitting this form, I provide my
+                  electronic signature and agree that SecureLife may contact me
+                  by telephone, text message, or email regarding my life
+                  insurance request. I also authorize SecureLife to share my
+                  information with a licensed insurance agent or agency that may
+                  contact me about life insurance options. Consent is not a
+                  condition of purchasing any product or service. Message and
+                  data rates may apply. I can opt out of text messages by
+                  replying STOP. I have read the
+                  <a href="privacy-policy.html" target="_blank">Privacy Policy</a>.
+                </span>
+              </label>
+            </div>
+
+            <button type="submit" id="submitButton" class="btn btn-primary btn-block">
+              Get My Free Quote
+            </button>
+
+            <p class="form-message" id="formMessage" aria-live="polite"></p>
+
+            <p class="privacy-note">
+              🔒 Your information is kept private and secure.
+              <a href="privacy-policy.html" target="_blank">Privacy Policy</a>
+            </p>
+
+          </form>
         </div>
-
-        <form id="quoteForm">
-
-          <h2>Get Your Free Quote</h2>
-
-          <p class="form-subtitle">
-            Tell us a little about yourself to explore your options.
-          </p>
-
-          <div class="form-row">
-
-            <div class="form-group">
-              <label for="firstName">First Name</label>
-
-              <input
-                type="text"
-                id="firstName"
-                name="firstName"
-                placeholder="First Name"
-                autocomplete="given-name"
-                required
-              >
-            </div>
-
-            <div class="form-group">
-              <label for="lastName">Last Name</label>
-
-              <input
-                type="text"
-                id="lastName"
-                name="lastName"
-                placeholder="Last Name"
-                autocomplete="family-name"
-                required
-              >
-            </div>
-
-          </div>
-
-          <div class="form-group">
-            <label for="email">Email Address</label>
-
-            <input
-              type="email"
-              id="email"
-              name="email"
-              placeholder="you@example.com"
-              autocomplete="email"
-              required
-            >
-          </div>
-
-          <div class="form-group">
-            <label for="phone">Phone Number</label>
-
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              placeholder="(555) 555-5555"
-              autocomplete="tel"
-              required
-            >
-          </div>
-
-          <div class="form-group">
-            <label for="zip">ZIP Code</label>
-
-            <input
-              type="text"
-              id="zip"
-              name="zip"
-              placeholder="ZIP Code"
-              autocomplete="postal-code"
-              inputmode="numeric"
-              pattern="[0-9]{5}"
-              maxlength="5"
-              required
-            >
-          </div>
-
-          <!-- AGE SLIDER -->
-
-          <div class="form-group slider-group">
-
-            <label for="age">
-              What is your age?
-            </label>
-
-            <div class="slider-value" id="ageValue">
-              35
-            </div>
-
-            <input
-              type="range"
-              id="age"
-              name="age"
-              min="18"
-              max="80"
-              value="35"
-              step="1"
-              required
-            >
-
-            <div class="slider-labels">
-              <span>18</span>
-              <span>80</span>
-            </div>
-
-          </div>
-
-          <!-- COVERAGE SLIDER -->
-
-          <div class="form-group slider-group">
-
-            <label for="coverage">
-              How much coverage are you interested in?
-            </label>
-
-            <div class="slider-value" id="coverageValue">
-              $250,000
-            </div>
-
-            <input
-              type="range"
-              id="coverage"
-              name="coverage"
-              min="25000"
-              max="1000000"
-              value="250000"
-              step="25000"
-              required
-            >
-
-            <div class="slider-labels">
-              <span>$25K</span>
-              <span>$1M</span>
-            </div>
-
-          </div>
-
-          <!-- CURRENT INSURANCE DROPDOWN -->
-
-          <div class="form-group">
-
-            <label for="insurance">
-              Do you currently have life insurance?
-            </label>
-
-            <select
-              id="insurance"
-              name="insurance"
-              required
-            >
-              <option value="" selected disabled>
-                Select an answer
-              </option>
-
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
-              <option value="not-sure">Not sure</option>
-            </select>
-
-          </div>
-
-          <!-- CONSENT -->
-
-          <div class="form-group consent-group">
-
-            <label for="consent">
-
-              <input
-                type="checkbox"
-                id="consent"
-                name="consent"
-                required
-              >
-
-              <span>
-               <span>
-  By checking this box and submitting this form, I provide my
-  electronic signature and agree that SecureLife may contact me
-  by telephone, text message, or email regarding my life insurance
-  request. I also authorize SecureLife to share my information with
-  a licensed insurance agent or agency that may contact me about
-  life insurance options. Consent is not a condition of purchasing
-  any product or service. Message and data rates may apply. I can
-  opt out of text messages by replying STOP. I have read the
-  <a href="privacy-policy.html" target="_blank">
-    Privacy Policy
-  </a>.
-</span>
-
-            </label>
-
-          </div>
-
-          <button type="submit" id="submitButton">
-            Get My Free Quote
-          </button>
-
-          <p
-            class="form-message"
-            id="formMessage"
-            aria-live="polite"
-          ></p>
-
-          <p class="privacy-note">
-            Your information is kept private and is used to help connect you
-            with life insurance options.
-          </p>
-
-          <p class="privacy-note">
-            <a href="privacy-policy.html" target="_blank">
-              Privacy Policy
-            </a>
-          </p>
-
-        </form>
 
       </div>
-
     </section>
 
-    <section class="why-section">
-
-      <h2>Why Consider Life Insurance?</h2>
-
-      <div class="trust-items">
-
-        <div class="trust-item">
-
-          <div class="icon">✓</div>
-
-          <h3>Financial Protection</h3>
-
-          <p>
-            Help provide financial support for the people who depend on you.
-          </p>
-
+    <!-- TRUST BAR -->
+    <section class="trust-bar">
+      <div class="container trust-bar__inner">
+        <div class="trust-bar__item">
+          <span class="ico">✓</span> No obligation to buy
         </div>
-
-        <div class="trust-item">
-
-          <div class="icon">✓</div>
-
-          <h3>Peace of Mind</h3>
-
-          <p>
-            Help prepare your loved ones for the unexpected.
-          </p>
-
+        <div class="trust-bar__item">
+          <span class="ico">✓</span> Licensed insurance professionals
         </div>
-
-        <div class="trust-item">
-
-          <div class="icon">✓</div>
-
-          <h3>Explore Your Options</h3>
-
-          <p>
-            Learn about coverage options that may fit your individual needs.
-          </p>
-
+        <div class="trust-bar__item">
+          <span class="ico">✓</span> Private &amp; secure
         </div>
-
+        <div class="trust-bar__item">
+          <span class="ico">✓</span> 100% free quote
+        </div>
       </div>
+    </section>
 
+    <!-- CREDIBILITY -->
+    <section class="credibility">
+      <div class="container cred-grid">
+        <div class="cred-item">
+          <div class="cico">🔒</div>
+          <h3>Private &amp; secure</h3>
+          <p>Your details are transmitted over an encrypted connection.</p>
+        </div>
+        <div class="cred-item">
+          <div class="cico">🛡️</div>
+          <h3>Licensed professionals</h3>
+          <p>Requests are handled by licensed insurance agents and agencies.</p>
+        </div>
+        <div class="cred-item">
+          <div class="cico">✅</div>
+          <h3>Clear consent</h3>
+          <p>You choose to be contacted — consent is never a condition to buy.</p>
+        </div>
+        <div class="cred-item">
+          <div class="cico">🤝</div>
+          <h3>No obligation</h3>
+          <p>Explore your options at your own pace, with no pressure.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="section how" id="how">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow">How it works</span>
+          <h2>Three simple steps</h2>
+          <p>Getting started is fast, free, and completely up to you.</p>
+        </div>
+
+        <div class="steps">
+          <div class="step">
+            <div class="step__num">1</div>
+            <h3>Share a few details</h3>
+            <p>
+              Answer a handful of quick questions about the coverage you're
+              curious about — it only takes a couple of minutes.
+            </p>
+          </div>
+
+          <div class="step">
+            <div class="step__num">2</div>
+            <h3>Connect with an agent</h3>
+            <p>
+              A licensed insurance agent or agency may reach out to talk
+              through options that fit your situation.
+            </p>
+          </div>
+
+          <div class="step">
+            <div class="step__num">3</div>
+            <h3>Explore your options</h3>
+            <p>
+              Review the choices at your own pace. There's no cost and no
+              obligation to move forward.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- WHY -->
+    <section class="section why" id="why">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow">Why it matters</span>
+          <h2>Why consider life insurance?</h2>
+          <p>Peace of mind for the people who depend on you.</p>
+        </div>
+
+        <div class="cards">
+          <div class="card">
+            <div class="icon">🛡️</div>
+            <h3>Financial protection</h3>
+            <p>
+              Help provide financial support for the people who depend on you
+              when they need it most.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="icon">💚</div>
+            <h3>Peace of mind</h3>
+            <p>
+              Help prepare your loved ones for the unexpected so they can focus
+              on what matters.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="icon">🔍</div>
+            <h3>Explore your options</h3>
+            <p>
+              Learn about coverage options that may fit your individual needs
+              and budget.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- REASSURE / SECONDARY CTA -->
+    <section class="reassure">
+      <div class="container reassure__inner">
+        <div>
+          <h2>Ready to explore your options?</h2>
+          <p>
+            Your information is kept private and is only used to help connect
+            you with life insurance options. No spam — just a helpful next step.
+          </p>
+        </div>
+        <a href="#quote" class="btn btn-accent">Get My Free Quote</a>
+      </div>
     </section>
 
   </main>
 
-  <footer>
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="brand">
+            <span class="mark">◆</span>
+            SecureLife
+          </div>
+          <p>
+            Helping you explore life insurance options designed to protect your
+            family's financial future. Simple. Secure. No obligation.
+          </p>
+        </div>
 
-    <p>
-      By submitting this form, you agree to be contacted regarding
-      life insurance options.
-    </p>
+        <div class="footer-col">
+          <h4>Explore</h4>
+          <a href="how-it-works.html">How It Works</a>
+          <a href="coverage.html">Coverage Options</a>
+          <a href="faq.html">FAQ</a>
+          <a href="index.html#quote">Get a Quote</a>
+        </div>
 
-    <p>
-      © 2026 SecureLife. All rights reserved.
-    </p>
+        <div class="footer-col">
+          <h4>Company</h4>
+          <a href="about.html">About Us</a>
+          <a href="contact.html">Contact</a>
+          <a href="privacy-policy.html">Privacy Policy</a>
+        </div>
+      </div>
 
+      <div class="footer-bottom">
+        <p>
+          By submitting the form on this site, you agree to be contacted
+          regarding life insurance options. Consent is not a condition of any
+          purchase.
+        </p>
+        <p>© 2026 SecureLife. All rights reserved.</p>
+      </div>
+    </div>
   </footer>
 
   <script src="script.js"></script>
