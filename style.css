@@ -296,8 +296,8 @@ a:hover {
   display: grid;
   grid-template-columns: 1.05fr 0.95fr;
   gap: 56px;
-  align-items: center;
-  padding: 76px 0 88px;
+  align-items: start;
+  padding: 48px 0 80px;
 }
 
 .hero-copy .eyebrow {
