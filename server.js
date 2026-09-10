@@ -1,7 +1,14 @@
 const express = require("express");
-const { Resend } = require("resend");
 const cors = require("cors");
 const { Pool } = require("pg");
+const {
+  createResendClient,
+  describeEmailConfig,
+  logEmailConfig,
+  sendLeadConfirmation,
+  sendLeadNotification,
+  sendBuyerLeadEmail
+} = require("./email");
 
 const app = express();
 
@@ -13,18 +20,22 @@ const CONSENT_VERSION =
 const CONSENT_TEXT =
   "By checking this box and submitting this form, I provide my electronic signature and agree that SecureLife may contact me by telephone, text message, or email regarding my life insurance request. I also authorize SecureLife to share my information with a licensed insurance agent or agency that may contact me about life insurance options. Consent is not a condition of purchasing any product or service. Message and data rates may apply. I can opt out of text messages by replying STOP. I have read the Privacy Policy.";
 
-const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : null;
+const resend = createResendClient();
 
 app.use(cors());
 app.use(express.json({ limit: "32kb" }));
 
+const databaseUrl = process.env.DATABASE_URL || "";
+const isLocalDatabase =
+  !databaseUrl || /localhost|127\.0\.0\.1/.test(databaseUrl);
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  connectionString: databaseUrl || undefined,
+  ssl: isLocalDatabase
+    ? false
+    : {
+        rejectUnauthorized: false
+      }
 });
 
 
@@ -66,7 +77,13 @@ async function setupDatabase() {
     ADD COLUMN IF NOT EXISTS consent_timestamp TIMESTAMPTZ,
     ADD COLUMN IF NOT EXISTS consent_ip TEXT DEFAULT '',
     ADD COLUMN IF NOT EXISTS consent_user_agent TEXT DEFAULT '',
-    ADD COLUMN IF NOT EXISTS consent_page_url TEXT DEFAULT ''
+    ADD COLUMN IF NOT EXISTS consent_page_url TEXT DEFAULT '',
+    ADD COLUMN IF NOT EXISTS notification_email_status TEXT DEFAULT '',
+    ADD COLUMN IF NOT EXISTS notification_email_error TEXT DEFAULT '',
+    ADD COLUMN IF NOT EXISTS notification_email_id TEXT DEFAULT '',
+    ADD COLUMN IF NOT EXISTS confirmation_email_status TEXT DEFAULT '',
+    ADD COLUMN IF NOT EXISTS confirmation_email_error TEXT DEFAULT '',
+    ADD COLUMN IF NOT EXISTS confirmation_email_id TEXT DEFAULT ''
   `);
 
   await pool.query(`
@@ -147,88 +164,99 @@ async function syncLeadToGoogleSheet(lead) {
 }
 
 
-// ========================================
-// NEW-LEAD NOTIFICATION EMAIL
-// ========================================
+async function recordEmailResult(leadId, kind, result) {
+  const columns = {
+    notification: [
+      "notification_email_status",
+      "notification_email_error",
+      "notification_email_id"
+    ],
+    confirmation: [
+      "confirmation_email_status",
+      "confirmation_email_error",
+      "confirmation_email_id"
+    ]
+  }[kind];
 
-async function sendLeadNotification(lead) {
-  if (!resend) {
-    console.warn(
-      "Lead notification email skipped: RESEND_API_KEY is not configured."
-    );
-    return false;
+  if (!columns) {
+    return;
   }
 
-  const recipients = (process.env.LEAD_NOTIFICATION_EMAIL || "")
-    .split(",")
-    .map((address) => address.trim())
-    .filter(Boolean);
-
-  if (recipients.length === 0) {
-    console.warn(
-      "Lead notification email skipped: LEAD_NOTIFICATION_EMAIL is not configured."
+  try {
+    await pool.query(
+      `
+      UPDATE leads
+      SET
+        ${columns[0]} = $1,
+        ${columns[1]} = $2,
+        ${columns[2]} = $3
+      WHERE id = $4
+      `,
+      [
+        result.status,
+        result.error || "",
+        result.id || "",
+        leadId
+      ]
     );
-    return false;
-  }
-
-  const from =
-    process.env.LEAD_NOTIFICATION_FROM ||
-    "leads@securelifeinsurances.com";
-
-  const { data, error } = await resend.emails.send({
-    from,
-    to: recipients,
-    subject:
-      `New SecureLife Lead #${lead.id} - ` +
-      `${lead.first_name} ${lead.last_name}`,
-
-    html: `
-      <h2>New SecureLife Lead</h2>
-
-      <p>A new life insurance lead was just submitted.</p>
-
-      <hr>
-
-      <p><strong>Name:</strong> ${lead.first_name} ${lead.last_name}</p>
-      <p><strong>Email:</strong> ${lead.email}</p>
-      <p><strong>Phone:</strong> ${lead.phone}</p>
-      <p><strong>ZIP:</strong> ${lead.zip}</p>
-      <p><strong>Age:</strong> ${lead.age}</p>
-      <p><strong>Coverage:</strong> ${lead.coverage}</p>
-      <p><strong>Currently insured:</strong> ${lead.insurance}</p>
-      <p><strong>Source:</strong> ${lead.source || "Direct/Unknown"}</p>
-      <p><strong>Campaign:</strong> ${lead.campaign || ""}</p>
-
-      <hr>
-
-      <p><strong>Lead ID:</strong> ${lead.id}</p>
-      <p><strong>Submitted:</strong> ${lead.created_at}</p>
-    `
-  });
-
-  if (error) {
-    throw new Error(
-      error.message || "Resend returned an error."
+  } catch (error) {
+    console.error(
+      `Unable to record ${kind} email status:`,
+      error
     );
   }
-
-  console.log(
-    `Lead #${lead.id} notification email sent (id: ${data ? data.id : "unknown"})`
-  );
-
-  return true;
 }
 
 
-// ========================================
-// BACKGROUND POST-SUBMISSION WORK
-// ========================================
-//
-// Runs the slow third-party integrations (reporting sync + notification
-// email) after the visitor already received their response, so neither the
-// latency nor the failure of these calls affects the submission experience.
+async function sendAndRecordConfirmation(lead) {
+  try {
+    const result = await sendLeadConfirmation(resend, lead);
+    await recordEmailResult(lead.id, "confirmation", {
+      status: result.sent ? "sent" : "skipped",
+      error: result.reason || "",
+      id: result.id || ""
+    });
+    return result;
+  } catch (emailError) {
+    console.error("Lead confirmation email error:", emailError);
+    await recordEmailResult(lead.id, "confirmation", {
+      status: "failed",
+      error: emailError.message || String(emailError),
+      id: ""
+    });
+    return {
+      sent: false,
+      skipped: false,
+      reason: emailError.message || String(emailError)
+    };
+  }
+}
 
-function processNewLeadSideEffects(lead) {
+async function sendAndRecordNotification(lead) {
+  try {
+    const result = await sendLeadNotification(resend, lead);
+    await recordEmailResult(lead.id, "notification", {
+      status: result.sent ? "sent" : "skipped",
+      error: result.reason || "",
+      id: result.id || ""
+    });
+    return result;
+  } catch (emailError) {
+    console.error("Lead notification email error:", emailError);
+    await recordEmailResult(lead.id, "notification", {
+      status: "failed",
+      error: emailError.message || String(emailError),
+      id: ""
+    });
+    return {
+      sent: false,
+      skipped: false,
+      reason: emailError.message || String(emailError)
+    };
+  }
+}
+
+function syncReportingInBackground(lead) {
   syncLeadToGoogleSheet(lead)
     .then(() => {
       console.log(`Lead #${lead.id} synced to Google Sheets`);
@@ -236,10 +264,6 @@ function processNewLeadSideEffects(lead) {
     .catch((syncError) => {
       console.error("Google Sheets sync error:", syncError);
     });
-
-  sendLeadNotification(lead).catch((emailError) => {
-    console.error("Lead notification email error:", emailError);
-  });
 }
 
 
@@ -270,9 +294,16 @@ function authorizeDashboard(req, res, next) {
 // ========================================
 
 app.get("/api/healthz", (req, res) => {
+  const email = describeEmailConfig();
+
   res.json({
     status: "ok",
-    message: "SecureLife backend is running"
+    message: "SecureLife backend is running",
+    email: {
+      configured: email.providerConfigured,
+      from: email.from,
+      confirmationFrom: email.confirmationFrom
+    }
   });
 });
 
@@ -391,18 +422,22 @@ app.post("/api/leads", async (req, res) => {
       "New SecureLife lead saved to database"
     );
 
-    // Respond as soon as the lead is safely stored so the browser can
-    // redirect to the thank-you page immediately. The reporting sync and
-    // notification email are slow, third-party calls, so they run in the
-    // background and must never delay (or fail) the visitor's submission.
-    res.status(201).json({
+    // Send emails during this request so Render cannot drop them after the
+    // HTTP response. Google Sheets stays in the background because it is
+    // slow and must not block the thank-you page if it fails.
+    const [confirmation] = await Promise.all([
+      sendAndRecordConfirmation(savedLead),
+      sendAndRecordNotification(savedLead)
+    ]);
+
+    syncReportingInBackground(savedLead);
+
+    return res.status(201).json({
       success: true,
       message: "Your information has been received.",
-      leadId: savedLead.id
+      leadId: savedLead.id,
+      confirmationSent: confirmation.sent === true
     });
-
-    processNewLeadSideEffects(savedLead);
-    return;
 
   } catch (error) {
     console.error("Database error:", error);
@@ -834,14 +869,6 @@ app.post(
       });
     }
 
-    if (!resend) {
-      return res.status(500).json({
-        success: false,
-        message:
-          "Email delivery is not configured."
-      });
-    }
-
     try {
       const leadResult = await pool.query(
         `
@@ -888,73 +915,26 @@ app.post(
         });
       }
 
-      const { data, error } =
-        await resend.emails.send({
-          from: "leads@securelifeinsurances.com",
-          to: [buyer.email],
-          subject:
-            `New SecureLife Lead #${lead.id}`,
-
-          html: `
-            <h2>New SecureLife Lead</h2>
-
-            <p>
-              A new life insurance lead has been
-              delivered to your agency.
-            </p>
-
-            <hr>
-
-            <p>
-              <strong>Name:</strong>
-              ${lead.first_name} ${lead.last_name}
-            </p>
-
-            <p>
-              <strong>Email:</strong>
-              ${lead.email}
-            </p>
-
-            <p>
-              <strong>Phone:</strong>
-              ${lead.phone}
-            </p>
-
-            <p>
-              <strong>ZIP:</strong>
-              ${lead.zip}
-            </p>
-
-            <p>
-              <strong>Age:</strong>
-              ${lead.age}
-            </p>
-
-            <p>
-              <strong>Coverage:</strong>
-              ${lead.coverage}
-            </p>
-
-            <p>
-              <strong>Insurance:</strong>
-              ${lead.insurance}
-            </p>
-
-            <hr>
-
-            <p>
-              <strong>SecureLife Lead ID:</strong>
-              ${lead.id}
-            </p>
-          `
+      if (!resend) {
+        return res.status(500).json({
+          success: false,
+          message:
+            "Email delivery is not configured. Set RESEND_API_KEY on Render."
         });
+      }
 
-      if (error) {
-        console.error("Resend error:", error);
+      let deliveryEmail;
+      try {
+        deliveryEmail = await sendBuyerLeadEmail(resend, {
+          lead,
+          buyer
+        });
+      } catch (emailError) {
+        console.error("Resend error:", emailError);
 
         return res.status(500).json({
           success: false,
-          message: "Unable to send lead email."
+          message: emailError.message || "Unable to send lead email."
         });
       }
 
@@ -996,7 +976,7 @@ app.post(
         success: true,
         message:
           `Lead delivered to ${buyer.agency_name}.`,
-        emailId: data ? data.id : null
+        emailId: deliveryEmail.id || null
       });
 
     } catch (error) {
@@ -1023,6 +1003,7 @@ const PORT = process.env.PORT || 10000;
 async function startServer() {
   try {
     await setupDatabase();
+    logEmailConfig();
 
     app.listen(PORT, "0.0.0.0", () => {
       console.log(
