@@ -4,6 +4,7 @@ const http = require("node:http");
 const { Resend } = require("resend");
 const {
   FALLBACK_FROM,
+  BRANDED_FROM,
   DEFAULT_NOTIFICATION_EMAIL,
   getFromAddress,
   getConfirmationFromAddress,
@@ -88,12 +89,21 @@ const sampleLead = {
 };
 
 describe("email configuration", () => {
-  test("confirmation emails default to Resend's working from-address", () => {
+  test("confirmation emails default to leads@securelifeinsurances.com", () => {
     withEnv({
       LEAD_CONFIRMATION_FROM: undefined,
       LEAD_NOTIFICATION_FROM: undefined
     }, () => {
-      assert.equal(getConfirmationFromAddress(), FALLBACK_FROM);
+      assert.equal(getConfirmationFromAddress(), BRANDED_FROM);
+    });
+  });
+
+  test("ignores example.com From addresses from env vars", () => {
+    withEnv({
+      LEAD_CONFIRMATION_FROM: "SecureLife <beth.t@example.com>",
+      LEAD_NOTIFICATION_FROM: "hello@example.com"
+    }, () => {
+      assert.equal(getConfirmationFromAddress(), BRANDED_FROM);
     });
   });
 
@@ -186,7 +196,7 @@ describe("sendLeadConfirmation", () => {
           assert.equal(result.sent, true);
           assert.equal(result.id, "email_confirm_1");
           assert.deepEqual(result.to, ["ada@example.com"]);
-          assert.equal(result.from, FALLBACK_FROM);
+          assert.equal(result.from, BRANDED_FROM);
         }
       );
     } finally {
@@ -195,7 +205,7 @@ describe("sendLeadConfirmation", () => {
 
     assert.equal(captured.length, 1);
     assert.deepEqual(captured[0].to, ["ada@example.com"]);
-    assert.equal(captured[0].from, FALLBACK_FROM);
+    assert.equal(captured[0].from, BRANDED_FROM);
     assert.equal(
       captured[0].subject,
       "We received your SecureLife quote request"
@@ -284,7 +294,7 @@ describe("sendLeadNotification", () => {
           assert.equal(result.sent, true);
           assert.equal(result.id, "email_test_1");
           assert.deepEqual(result.to, [DEFAULT_NOTIFICATION_EMAIL]);
-          assert.equal(result.from, FALLBACK_FROM);
+          assert.equal(result.from, BRANDED_FROM);
         }
       );
     } finally {
@@ -292,7 +302,7 @@ describe("sendLeadNotification", () => {
     }
 
     assert.equal(captured.length, 1);
-    assert.equal(captured[0].from, FALLBACK_FROM);
+    assert.equal(captured[0].from, BRANDED_FROM);
     assert.deepEqual(captured[0].to, [DEFAULT_NOTIFICATION_EMAIL]);
     assert.equal(
       captured[0].subject,
