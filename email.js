@@ -1,12 +1,11 @@
 const { Resend } = require("resend");
 
 // Resend delivers immediately from this address without a verified domain.
-// Owner-only alerts can fall back to it. Visitor confirmation emails cannot —
-// Resend will not deliver to the person who submitted the form from this
-// address unless that person is the Resend account owner.
+// Confirmation emails use this by default so a form submission can actually
+// send mail before securelifeinsurances.com is verified. Resend's test mode
+// still only delivers to the email on the Resend account.
 const FALLBACK_FROM = "SecureLife <beth.t@example.com>";
 
-// Visitor confirmation and buyer delivery must come from the branded domain.
 const BRANDED_FROM = "SecureLife <leads@securelifeinsurances.com>";
 const SUPPORT_EMAIL = "support@securelifeinsurances.com";
 
@@ -31,7 +30,7 @@ function getConfirmationFromAddress() {
   return (
     (process.env.LEAD_CONFIRMATION_FROM || "").trim() ||
     (process.env.LEAD_NOTIFICATION_FROM || "").trim() ||
-    BRANDED_FROM
+    FALLBACK_FROM
   );
 }
 
@@ -293,19 +292,6 @@ function buildBuyerDeliveryContent(lead) {
   };
 }
 
-async function sendDirect(resend, payload) {
-  const result = await resend.emails.send(payload);
-
-  if (result.error) {
-    throw new Error(domainHint(result.error));
-  }
-
-  return {
-    id: result.data ? result.data.id : null,
-    from: payload.from
-  };
-}
-
 async function sendWithFromFallback(resend, payload) {
   const preferredFrom = payload.from || getFromAddress();
   let usedFrom = preferredFrom;
@@ -358,7 +344,7 @@ async function sendLeadConfirmation(resend, lead) {
   const from = getConfirmationFromAddress();
   const content = buildLeadConfirmationContent(lead);
 
-  const sent = await sendDirect(resend, {
+  const sent = await sendWithFromFallback(resend, {
     from,
     to: [lead.email],
     replyTo: SUPPORT_EMAIL,
@@ -425,7 +411,7 @@ async function sendBuyerLeadEmail(resend, { lead, buyer }) {
 
   const content = buildBuyerDeliveryContent(lead);
 
-  const sent = await sendDirect(resend, {
+  const sent = await sendWithFromFallback(resend, {
     from: getConfirmationFromAddress(),
     to: [buyer.email],
     replyTo: lead.email,

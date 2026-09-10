@@ -208,55 +208,61 @@ async function recordEmailResult(leadId, kind, result) {
 }
 
 
-// ========================================
-// BACKGROUND POST-SUBMISSION WORK
-// ========================================
-//
-// Runs the slow third-party integrations (reporting sync + notification
-// email) after the visitor already received their response, so neither the
-// latency nor the failure of these calls affects the submission experience.
+async function sendAndRecordConfirmation(lead) {
+  try {
+    const result = await sendLeadConfirmation(resend, lead);
+    await recordEmailResult(lead.id, "confirmation", {
+      status: result.sent ? "sent" : "skipped",
+      error: result.reason || "",
+      id: result.id || ""
+    });
+    return result;
+  } catch (emailError) {
+    console.error("Lead confirmation email error:", emailError);
+    await recordEmailResult(lead.id, "confirmation", {
+      status: "failed",
+      error: emailError.message || String(emailError),
+      id: ""
+    });
+    return {
+      sent: false,
+      skipped: false,
+      reason: emailError.message || String(emailError)
+    };
+  }
+}
 
-function processNewLeadSideEffects(lead) {
+async function sendAndRecordNotification(lead) {
+  try {
+    const result = await sendLeadNotification(resend, lead);
+    await recordEmailResult(lead.id, "notification", {
+      status: result.sent ? "sent" : "skipped",
+      error: result.reason || "",
+      id: result.id || ""
+    });
+    return result;
+  } catch (emailError) {
+    console.error("Lead notification email error:", emailError);
+    await recordEmailResult(lead.id, "notification", {
+      status: "failed",
+      error: emailError.message || String(emailError),
+      id: ""
+    });
+    return {
+      sent: false,
+      skipped: false,
+      reason: emailError.message || String(emailError)
+    };
+  }
+}
+
+function syncReportingInBackground(lead) {
   syncLeadToGoogleSheet(lead)
     .then(() => {
       console.log(`Lead #${lead.id} synced to Google Sheets`);
     })
     .catch((syncError) => {
       console.error("Google Sheets sync error:", syncError);
-    });
-
-  sendLeadConfirmation(resend, lead)
-    .then((result) => {
-      return recordEmailResult(lead.id, "confirmation", {
-        status: result.sent ? "sent" : "skipped",
-        error: result.reason || "",
-        id: result.id || ""
-      });
-    })
-    .catch((emailError) => {
-      console.error("Lead confirmation email error:", emailError);
-      return recordEmailResult(lead.id, "confirmation", {
-        status: "failed",
-        error: emailError.message || String(emailError),
-        id: ""
-      });
-    });
-
-  sendLeadNotification(resend, lead)
-    .then((result) => {
-      return recordEmailResult(lead.id, "notification", {
-        status: result.sent ? "sent" : "skipped",
-        error: result.reason || "",
-        id: result.id || ""
-      });
-    })
-    .catch((emailError) => {
-      console.error("Lead notification email error:", emailError);
-      return recordEmailResult(lead.id, "notification", {
-        status: "failed",
-        error: emailError.message || String(emailError),
-        id: ""
-      });
     });
 }
 
@@ -416,18 +422,22 @@ app.post("/api/leads", async (req, res) => {
       "New SecureLife lead saved to database"
     );
 
-    // Respond as soon as the lead is safely stored so the browser can
-    // redirect to the thank-you page immediately. The reporting sync and
-    // notification email are slow, third-party calls, so they run in the
-    // background and must never delay (or fail) the visitor's submission.
-    res.status(201).json({
+    // Send emails during this request so Render cannot drop them after the
+    // HTTP response. Google Sheets stays in the background because it is
+    // slow and must not block the thank-you page if it fails.
+    const [confirmation] = await Promise.all([
+      sendAndRecordConfirmation(savedLead),
+      sendAndRecordNotification(savedLead)
+    ]);
+
+    syncReportingInBackground(savedLead);
+
+    return res.status(201).json({
       success: true,
       message: "Your information has been received.",
-      leadId: savedLead.id
+      leadId: savedLead.id,
+      confirmationSent: confirmation.sent === true
     });
-
-    processNewLeadSideEffects(savedLead);
-    return;
 
   } catch (error) {
     console.error("Database error:", error);

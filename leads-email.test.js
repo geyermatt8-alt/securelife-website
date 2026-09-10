@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const http = require("node:http");
 const { spawn } = require("node:child_process");
 const { Pool } = require("pg");
-const { FALLBACK_FROM, BRANDED_FROM, DEFAULT_NOTIFICATION_EMAIL } = require("./email");
+const { FALLBACK_FROM, DEFAULT_NOTIFICATION_EMAIL } = require("./email");
 
 const DATABASE_URL =
   process.env.TEST_DATABASE_URL ||
@@ -174,7 +174,7 @@ test("healthz reports email as configured", async () => {
   assert.equal(response.status, 200);
   assert.equal(body.email.configured, true);
   assert.equal(body.email.from, FALLBACK_FROM);
-  assert.equal(body.email.confirmationFrom, BRANDED_FROM);
+  assert.equal(body.email.confirmationFrom, FALLBACK_FROM);
 });
 
 test("submitting a lead emails a confirmation to the visitor", async () => {
@@ -211,13 +211,15 @@ test("submitting a lead emails a confirmation to the visitor", async () => {
     `submission should return quickly, took ${elapsedMs}ms`
   );
 
-  const confirmation = await waitForEmail(
+  assert.equal(body.confirmationSent, true);
+
+  const confirmation = capturedEmails.find(
     (item) => item.body &&
       Array.isArray(item.body.to) &&
       item.body.to.includes(visitorEmail)
   );
-
-  assert.equal(confirmation.body.from, BRANDED_FROM);
+  assert.ok(confirmation, "confirmation email was not sent during the request");
+  assert.equal(confirmation.body.from, FALLBACK_FROM);
   assert.equal(
     confirmation.body.subject,
     "We received your SecureLife quote request"
