@@ -1,9 +1,7 @@
 const { Resend } = require("resend");
 
-// Resend delivers immediately from this address without a verified domain.
-// Confirmation emails use this by default so a form submission can actually
-// send mail before securelifeinsurances.com is verified. Resend's test mode
-// still only delivers to the email on the Resend account.
+// Send from the branded domain. If Resend rejects it because the domain is
+// not verified yet, sendWithFromFallback retries beth.t@example.com.
 const FALLBACK_FROM = "SecureLife <beth.t@example.com>";
 
 const BRANDED_FROM = "SecureLife <leads@securelifeinsurances.com>";
@@ -21,16 +19,32 @@ function createResendClient() {
   return new Resend(apiKey);
 }
 
+function normalizeFromAddress(value) {
+  const cleaned = String(value || "").replace(/\s+/g, " ").trim();
+  if (!cleaned) {
+    return "";
+  }
+
+  // Resend docs use example.com as a placeholder. That domain cannot send mail.
+  if (/@example\.com\b/i.test(cleaned) || /example\.com>/i.test(cleaned)) {
+    return "";
+  }
+
+  return cleaned;
+}
+
 function getFromAddress() {
-  const configured = (process.env.LEAD_NOTIFICATION_FROM || "").trim();
-  return configured || FALLBACK_FROM;
+  return (
+    normalizeFromAddress(process.env.LEAD_NOTIFICATION_FROM) ||
+    BRANDED_FROM
+  );
 }
 
 function getConfirmationFromAddress() {
   return (
-    (process.env.LEAD_CONFIRMATION_FROM || "").trim() ||
-    (process.env.LEAD_NOTIFICATION_FROM || "").trim() ||
-    FALLBACK_FROM
+    normalizeFromAddress(process.env.LEAD_CONFIRMATION_FROM) ||
+    normalizeFromAddress(process.env.LEAD_NOTIFICATION_FROM) ||
+    BRANDED_FROM
   );
 }
 
