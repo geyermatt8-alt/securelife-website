@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const http = require("node:http");
 const { spawn } = require("node:child_process");
 const { Pool } = require("pg");
-const { FALLBACK_FROM, DEFAULT_NOTIFICATION_EMAIL } = require("./email");
+const { FALLBACK_FROM, BRANDED_FROM, DEFAULT_NOTIFICATION_EMAIL } = require("./email");
 
 const DATABASE_URL =
   process.env.TEST_DATABASE_URL ||
@@ -174,11 +174,13 @@ test("healthz reports email as configured", async () => {
   assert.equal(response.status, 200);
   assert.equal(body.email.configured, true);
   assert.equal(body.email.from, FALLBACK_FROM);
+  assert.equal(body.email.confirmationFrom, BRANDED_FROM);
 });
 
-test("submitting a lead sends a notification email without waiting on Resend", async () => {
+test("submitting a lead emails a confirmation to the visitor", async () => {
   capturedEmails.length = 0;
   const suffix = Date.now();
+  const visitorEmail = `test.lead.${suffix}@example.com`;
 
   const started = Date.now();
   const response = await fetch(`${apiBase}/api/leads`, {
@@ -187,7 +189,7 @@ test("submitting a lead sends a notification email without waiting on Resend", a
     body: JSON.stringify({
       firstName: "Test",
       lastName: `Lead${suffix}`,
-      email: `test.lead.${suffix}@example.com`,
+      email: visitorEmail,
       phone: "5551112222",
       zip: "10001",
       age: "40",
@@ -209,15 +211,25 @@ test("submitting a lead sends a notification email without waiting on Resend", a
     `submission should return quickly, took ${elapsedMs}ms`
   );
 
-  const email = await waitForEmail(
+  const confirmation = await waitForEmail(
+    (item) => item.body &&
+      Array.isArray(item.body.to) &&
+      item.body.to.includes(visitorEmail)
+  );
+
+  assert.equal(confirmation.body.from, BRANDED_FROM);
+  assert.equal(
+    confirmation.body.subject,
+    "We received your SecureLife quote request"
+  );
+  assert.match(confirmation.body.html, new RegExp(`Lead${suffix}`));
+  assert.match(confirmation.body.text, /\$100,000/);
+
+  const notification = await waitForEmail(
     (item) => item.body && item.body.subject &&
       item.body.subject.includes(`Lead #${body.leadId}`)
   );
-
-  assert.equal(email.body.from, FALLBACK_FROM);
-  assert.deepEqual(email.body.to, [DEFAULT_NOTIFICATION_EMAIL]);
-  assert.match(email.body.html, new RegExp(`Lead${suffix}`));
-  assert.match(email.body.text, /5551112222/);
+  assert.deepEqual(notification.body.to, [DEFAULT_NOTIFICATION_EMAIL]);
 
   const pool = new Pool({ connectionString: DATABASE_URL, ssl: false });
   try {
@@ -225,17 +237,24 @@ test("submitting a lead sends a notification email without waiting on Resend", a
     let saved;
     while (Date.now() < deadline) {
       const result = await pool.query(
-        "SELECT notification_email_status, notification_email_id FROM leads WHERE id = $1",
+        `SELECT confirmation_email_status, confirmation_email_id,
+                notification_email_status
+         FROM leads WHERE id = $1`,
         [body.leadId]
       );
       saved = result.rows[0];
-      if (saved && saved.notification_email_status === "sent") {
+      if (
+        saved &&
+        saved.confirmation_email_status === "sent" &&
+        saved.notification_email_status === "sent"
+      ) {
         break;
       }
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
+    assert.equal(saved.confirmation_email_status, "sent");
+    assert.ok(saved.confirmation_email_id);
     assert.equal(saved.notification_email_status, "sent");
-    assert.ok(saved.notification_email_id);
   } finally {
     await pool.end();
   }

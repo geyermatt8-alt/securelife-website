@@ -8,7 +8,8 @@
   },
   "scripts": {
     "start": "node server.js",
-    "build": "echo \"No build step required\""
+    "build": "echo \"No build step required\"",
+    "test": "node --test email.test.js leads-email.test.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

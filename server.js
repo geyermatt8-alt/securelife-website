@@ -5,6 +5,7 @@ const {
   createResendClient,
   describeEmailConfig,
   logEmailConfig,
+  sendLeadConfirmation,
   sendLeadNotification,
   sendBuyerLeadEmail
 } = require("./email");
@@ -79,7 +80,10 @@ async function setupDatabase() {
     ADD COLUMN IF NOT EXISTS consent_page_url TEXT DEFAULT '',
     ADD COLUMN IF NOT EXISTS notification_email_status TEXT DEFAULT '',
     ADD COLUMN IF NOT EXISTS notification_email_error TEXT DEFAULT '',
-    ADD COLUMN IF NOT EXISTS notification_email_id TEXT DEFAULT ''
+    ADD COLUMN IF NOT EXISTS notification_email_id TEXT DEFAULT '',
+    ADD COLUMN IF NOT EXISTS confirmation_email_status TEXT DEFAULT '',
+    ADD COLUMN IF NOT EXISTS confirmation_email_error TEXT DEFAULT '',
+    ADD COLUMN IF NOT EXISTS confirmation_email_id TEXT DEFAULT ''
   `);
 
   await pool.query(`
@@ -160,15 +164,32 @@ async function syncLeadToGoogleSheet(lead) {
 }
 
 
-async function recordNotificationResult(leadId, result) {
+async function recordEmailResult(leadId, kind, result) {
+  const columns = {
+    notification: [
+      "notification_email_status",
+      "notification_email_error",
+      "notification_email_id"
+    ],
+    confirmation: [
+      "confirmation_email_status",
+      "confirmation_email_error",
+      "confirmation_email_id"
+    ]
+  }[kind];
+
+  if (!columns) {
+    return;
+  }
+
   try {
     await pool.query(
       `
       UPDATE leads
       SET
-        notification_email_status = $1,
-        notification_email_error = $2,
-        notification_email_id = $3
+        ${columns[0]} = $1,
+        ${columns[1]} = $2,
+        ${columns[2]} = $3
       WHERE id = $4
       `,
       [
@@ -180,7 +201,7 @@ async function recordNotificationResult(leadId, result) {
     );
   } catch (error) {
     console.error(
-      "Unable to record notification email status:",
+      `Unable to record ${kind} email status:`,
       error
     );
   }
@@ -204,9 +225,26 @@ function processNewLeadSideEffects(lead) {
       console.error("Google Sheets sync error:", syncError);
     });
 
+  sendLeadConfirmation(resend, lead)
+    .then((result) => {
+      return recordEmailResult(lead.id, "confirmation", {
+        status: result.sent ? "sent" : "skipped",
+        error: result.reason || "",
+        id: result.id || ""
+      });
+    })
+    .catch((emailError) => {
+      console.error("Lead confirmation email error:", emailError);
+      return recordEmailResult(lead.id, "confirmation", {
+        status: "failed",
+        error: emailError.message || String(emailError),
+        id: ""
+      });
+    });
+
   sendLeadNotification(resend, lead)
     .then((result) => {
-      return recordNotificationResult(lead.id, {
+      return recordEmailResult(lead.id, "notification", {
         status: result.sent ? "sent" : "skipped",
         error: result.reason || "",
         id: result.id || ""
@@ -214,7 +252,7 @@ function processNewLeadSideEffects(lead) {
     })
     .catch((emailError) => {
       console.error("Lead notification email error:", emailError);
-      return recordNotificationResult(lead.id, {
+      return recordEmailResult(lead.id, "notification", {
         status: "failed",
         error: emailError.message || String(emailError),
         id: ""
@@ -257,7 +295,8 @@ app.get("/api/healthz", (req, res) => {
     message: "SecureLife backend is running",
     email: {
       configured: email.providerConfigured,
-      from: email.from
+      from: email.from,
+      confirmationFrom: email.confirmationFrom
     }
   });
 });

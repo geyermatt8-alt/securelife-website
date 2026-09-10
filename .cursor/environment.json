@@ -6,7 +6,7 @@
     {
       "name": "backend",
       "command": "DATABASE_URL=\"${DATABASE_URL:-postgresql://securelife:securelife@localhost:5432/securelife}\" DASHBOARD_PASSWORD=\"${DASHBOARD_PASSWORD:-dev-dashboard-pass}\" PORT=\"${PORT:-10000}\" npm start",
-      "description": "SecureLife Express API (PostgreSQL-backed) on port 10000. Required for emails: RESEND_API_KEY. Optional: LEAD_NOTIFICATION_EMAIL (defaults to geyermatt8@gmail.com), LEAD_NOTIFICATION_FROM (defaults to Resend's onboarding address until the domain is verified), GOOGLE_SHEETS_WEBHOOK_URL + SYNC_SECRET (Sheets sync)."
+      "description": "SecureLife Express API (PostgreSQL-backed) on port 10000. Required for visitor confirmation emails: RESEND_API_KEY, plus a verified securelifeinsurances.com domain in Resend. Optional: LEAD_CONFIRMATION_FROM (defaults to SecureLife <leads@securelifeinsurances.com>), LEAD_NOTIFICATION_EMAIL, GOOGLE_SHEETS_WEBHOOK_URL + SYNC_SECRET."
     },
     {
       "name": "web",
