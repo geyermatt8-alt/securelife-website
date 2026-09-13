@@ -14,7 +14,8 @@ const {
   formatCoverage,
   sendLeadConfirmation,
   sendLeadNotification,
-  sendBuyerLeadEmail
+  sendBuyerLeadEmail,
+  buildLeadConfirmationContent
 } = require("./email");
 
 async function withEnv(vars, fn) {
@@ -169,6 +170,18 @@ describe("email configuration", () => {
   test("escapes HTML in lead fields", () => {
     assert.equal(escapeHtml('<img src=x onerror=alert(1)>'),
       "&lt;img src=x onerror=alert(1)&gt;");
+  });
+
+  test("confirmation template uses white text for body copy", () => {
+    const { html } = buildLeadConfirmationContent(sampleLead);
+    assert.match(html, /<h1 style="[^"]*color: #ffffff;"/);
+    assert.match(html, /<p style="color: #ffffff;">Hi Ada/);
+    assert.match(html, /color: #ffffff;">Name/);
+    assert.match(html, /font-size: 13px; color: #ffffff;/);
+    assert.match(html, /style="color: #ffffff;">support@securelifeinsurances.com/);
+    assert.match(html, /<p style="color: #ffffff;">SecureLife<\/p>/);
+    assert.doesNotMatch(html, /#12263a|#5b6b7c/);
+    assert.match(html, /color: #0f766e;/);
   });
 });
 
