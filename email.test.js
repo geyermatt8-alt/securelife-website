@@ -3,7 +3,6 @@ const assert = require("node:assert/strict");
 const http = require("node:http");
 const { Resend } = require("resend");
 const {
-  FALLBACK_FROM,
   BRANDED_FROM,
   DEFAULT_NOTIFICATION_EMAIL,
   getFromAddress,
@@ -215,39 +214,37 @@ describe("sendLeadConfirmation", () => {
     assert.equal(captured[0].reply_to, "support@securelifeinsurances.com");
   });
 
-  test("retries with the onboarding from-address when the branded domain is unverified", async () => {
+  test("retries a transient Resend failure and still emails the visitor", async () => {
     const captured = [];
     const mock = await startMockResend(({ body, res }) => {
       captured.push(body);
-      if (String(body.from).includes("securelifeinsurances.com")) {
-        res.writeHead(403, { "Content-Type": "application/json" });
+      if (captured.length === 1) {
+        res.writeHead(500, { "Content-Type": "application/json" });
         res.end(JSON.stringify({
-          statusCode: 403,
-          name: "validation_error",
-          message:
-            "The securelifeinsurances.com domain is not verified. Please, add and verify your domain on https://resend.com/domains"
+          statusCode: 500,
+          name: "application_error",
+          message: "Internal server error"
         }));
         return;
       }
 
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ id: "email_confirm_retry" }));
+      res.end(JSON.stringify({ id: "email_after_retry" }));
     });
 
     try {
       await withEnv(
         {
           RESEND_API_KEY: "re_test",
-          LEAD_CONFIRMATION_FROM:
-            "SecureLife <leads@securelifeinsurances.com>"
+          EMAIL_RETRY_DELAYS: "0"
         },
         async () => {
           const resend = new Resend("re_test");
           resend.baseUrl = mock.url;
           const result = await sendLeadConfirmation(resend, sampleLead);
           assert.equal(result.sent, true);
-          assert.equal(result.id, "email_confirm_retry");
-          assert.equal(result.from, FALLBACK_FROM);
+          assert.equal(result.id, "email_after_retry");
+          assert.equal(result.from, BRANDED_FROM);
           assert.deepEqual(result.to, ["ada@example.com"]);
         }
       );
@@ -256,9 +253,43 @@ describe("sendLeadConfirmation", () => {
     }
 
     assert.equal(captured.length, 2);
-    assert.match(captured[0].from, /securelifeinsurances.com/);
-    assert.equal(captured[1].from, FALLBACK_FROM);
+    assert.equal(captured[0].from, BRANDED_FROM);
+    assert.equal(captured[1].from, BRANDED_FROM);
     assert.deepEqual(captured[1].to, ["ada@example.com"]);
+  });
+
+  test("does not fall back to onboarding@resend.dev for visitor confirmation", async () => {
+    const captured = [];
+    const mock = await startMockResend(({ body, res }) => {
+      captured.push(body);
+      res.writeHead(403, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({
+        statusCode: 403,
+        name: "validation_error",
+        message:
+          "The securelifeinsurances.com domain is not verified. Please, add and verify your domain on https://resend.com/domains"
+      }));
+    });
+
+    try {
+      await withEnv(
+        { RESEND_API_KEY: "re_test", EMAIL_RETRY_DELAYS: "0" },
+        async () => {
+          const resend = new Resend("re_test");
+          resend.baseUrl = mock.url;
+          await assert.rejects(
+            () => sendLeadConfirmation(resend, sampleLead),
+            /securelifeinsurances.com/
+          );
+        }
+      );
+    } finally {
+      mock.server.close();
+    }
+
+    assert.equal(captured.length, 1);
+    assert.equal(captured[0].from, BRANDED_FROM);
+    assert.deepEqual(captured[0].to, ["ada@example.com"]);
   });
 });
 
@@ -313,39 +344,37 @@ describe("sendLeadNotification", () => {
     assert.equal(captured[0].reply_to, "ada@example.com");
   });
 
-  test("retries with the onboarding from-address when the domain is unverified", async () => {
+  test("retries a transient Resend failure for the owner alert", async () => {
     const captured = [];
     const mock = await startMockResend(({ body, res }) => {
       captured.push(body);
-      if (String(body.from).includes("securelifeinsurances.com")) {
-        res.writeHead(403, { "Content-Type": "application/json" });
+      if (captured.length === 1) {
+        res.writeHead(500, { "Content-Type": "application/json" });
         res.end(JSON.stringify({
-          statusCode: 403,
-          name: "validation_error",
-          message:
-            "The securelifeinsurances.com domain is not verified. Please, add and verify your domain on https://resend.com/domains"
+          statusCode: 500,
+          name: "application_error",
+          message: "Internal server error"
         }));
         return;
       }
 
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ id: "email_retry_ok" }));
+      res.end(JSON.stringify({ id: "email_notify_retry" }));
     });
 
     try {
       await withEnv(
         {
           RESEND_API_KEY: "re_test",
-          LEAD_NOTIFICATION_FROM:
-            "SecureLife <leads@securelifeinsurances.com>"
+          EMAIL_RETRY_DELAYS: "0"
         },
         async () => {
           const resend = new Resend("re_test");
           resend.baseUrl = mock.url;
           const result = await sendLeadNotification(resend, sampleLead);
           assert.equal(result.sent, true);
-          assert.equal(result.id, "email_retry_ok");
-          assert.equal(result.from, FALLBACK_FROM);
+          assert.equal(result.id, "email_notify_retry");
+          assert.equal(result.from, BRANDED_FROM);
         }
       );
     } finally {
@@ -353,8 +382,8 @@ describe("sendLeadNotification", () => {
     }
 
     assert.equal(captured.length, 2);
-    assert.match(captured[0].from, /securelifeinsurances.com/);
-    assert.equal(captured[1].from, FALLBACK_FROM);
+    assert.equal(captured[0].from, BRANDED_FROM);
+    assert.equal(captured[1].from, BRANDED_FROM);
   });
 });
 

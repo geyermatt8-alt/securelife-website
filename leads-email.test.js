@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const http = require("node:http");
 const { spawn } = require("node:child_process");
 const { Pool } = require("pg");
-const { FALLBACK_FROM, BRANDED_FROM, DEFAULT_NOTIFICATION_EMAIL } = require("./email");
+const { BRANDED_FROM, DEFAULT_NOTIFICATION_EMAIL } = require("./email");
 
 const DATABASE_URL =
   process.env.TEST_DATABASE_URL ||
@@ -34,8 +34,10 @@ function startMockResend() {
           method: req.method,
           body
         });
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ id: `email_${capturedEmails.length}` }));
+        setTimeout(() => {
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ id: `email_${capturedEmails.length}` }));
+        }, 300);
       });
     });
 
@@ -89,6 +91,7 @@ function startBackend({ resendUrl, port }) {
       DASHBOARD_PASSWORD: "dev-dashboard-pass",
       RESEND_API_KEY: "re_test_key",
       RESEND_BASE_URL: resendUrl,
+      EMAIL_RETRY_DELAYS: "0",
       LEAD_NOTIFICATION_EMAIL: "",
       LEAD_NOTIFICATION_FROM: "",
       GOOGLE_SHEETS_WEBHOOK_URL: "",
@@ -207,18 +210,15 @@ test("submitting a lead emails a confirmation to the visitor", async () => {
   assert.equal(body.success, true);
   assert.ok(body.leadId);
   assert.ok(
-    elapsedMs < 1500,
-    `submission should return quickly, took ${elapsedMs}ms`
+    elapsedMs < 300,
+    `submission should return before the 300ms Resend delay, took ${elapsedMs}ms`
   );
 
-  assert.equal(body.confirmationSent, true);
-
-  const confirmation = capturedEmails.find(
+  const confirmation = await waitForEmail(
     (item) => item.body &&
       Array.isArray(item.body.to) &&
       item.body.to.includes(visitorEmail)
   );
-  assert.ok(confirmation, "confirmation email was not sent during the request");
   assert.equal(confirmation.body.from, BRANDED_FROM);
   assert.equal(
     confirmation.body.subject,
