@@ -189,33 +189,33 @@ function buildLeadConfirmationContent(lead) {
     `SecureLife\n`;
 
   const html = `
-    <div style="font-family: Arial, Helvetica, sans-serif; color: #12263a; line-height: 1.5; max-width: 560px;">
+    <div style="font-family: Arial, Helvetica, sans-serif; color: #ffffff; line-height: 1.5; max-width: 560px;">
       <p style="font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: #0f766e; margin: 0 0 12px;">SecureLife</p>
-      <h1 style="font-size: 22px; margin: 0 0 16px;">We received your quote request</h1>
-      <p>Hi ${escapeHtml(firstName)},</p>
-      <p>
+      <h1 style="font-size: 22px; margin: 0 0 16px; color: #ffffff;">We received your quote request</h1>
+      <p style="color: #ffffff;">Hi ${escapeHtml(firstName)},</p>
+      <p style="color: #ffffff;">
         Thank you for requesting a free life insurance quote from SecureLife.
         We have received your information.
       </p>
-      <p>
+      <p style="color: #ffffff;">
         A licensed insurance professional may contact you shortly about the
         options you requested. Please keep your phone and email available.
       </p>
       <table style="border-collapse: collapse; width: 100%; margin: 20px 0;">
-        <tr><td style="padding: 6px 0; color: #5b6b7c;">Name</td><td style="padding: 6px 0;">${escapeHtml(lead.first_name)} ${escapeHtml(lead.last_name)}</td></tr>
-        <tr><td style="padding: 6px 0; color: #5b6b7c;">Email</td><td style="padding: 6px 0;">${escapeHtml(lead.email)}</td></tr>
-        <tr><td style="padding: 6px 0; color: #5b6b7c;">Phone</td><td style="padding: 6px 0;">${escapeHtml(lead.phone)}</td></tr>
-        <tr><td style="padding: 6px 0; color: #5b6b7c;">ZIP</td><td style="padding: 6px 0;">${escapeHtml(lead.zip)}</td></tr>
-        <tr><td style="padding: 6px 0; color: #5b6b7c;">Age</td><td style="padding: 6px 0;">${escapeHtml(lead.age)}</td></tr>
-        <tr><td style="padding: 6px 0; color: #5b6b7c;">Coverage</td><td style="padding: 6px 0;">${escapeHtml(coverage)}</td></tr>
-        <tr><td style="padding: 6px 0; color: #5b6b7c;">Currently insured</td><td style="padding: 6px 0;">${escapeHtml(insured)}</td></tr>
+        <tr><td style="padding: 6px 0; color: #ffffff;">Name</td><td style="padding: 6px 0; color: #ffffff;">${escapeHtml(lead.first_name)} ${escapeHtml(lead.last_name)}</td></tr>
+        <tr><td style="padding: 6px 0; color: #ffffff;">Email</td><td style="padding: 6px 0; color: #ffffff;">${escapeHtml(lead.email)}</td></tr>
+        <tr><td style="padding: 6px 0; color: #ffffff;">Phone</td><td style="padding: 6px 0; color: #ffffff;">${escapeHtml(lead.phone)}</td></tr>
+        <tr><td style="padding: 6px 0; color: #ffffff;">ZIP</td><td style="padding: 6px 0; color: #ffffff;">${escapeHtml(lead.zip)}</td></tr>
+        <tr><td style="padding: 6px 0; color: #ffffff;">Age</td><td style="padding: 6px 0; color: #ffffff;">${escapeHtml(lead.age)}</td></tr>
+        <tr><td style="padding: 6px 0; color: #ffffff;">Coverage</td><td style="padding: 6px 0; color: #ffffff;">${escapeHtml(coverage)}</td></tr>
+        <tr><td style="padding: 6px 0; color: #ffffff;">Currently insured</td><td style="padding: 6px 0; color: #ffffff;">${escapeHtml(insured)}</td></tr>
       </table>
-      <p style="font-size: 13px; color: #5b6b7c;">
+      <p style="font-size: 13px; color: #ffffff;">
         This is a confirmation only. It is not an insurance policy, a quote
         guarantee, or an obligation to buy.
       </p>
-      <p>Questions? Email <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a></p>
-      <p>SecureLife</p>
+      <p style="color: #ffffff;">Questions? Email <a href="mailto:${SUPPORT_EMAIL}" style="color: #ffffff;">${SUPPORT_EMAIL}</a></p>
+      <p style="color: #ffffff;">SecureLife</p>
     </div>
   `;
 
