@@ -422,22 +422,26 @@ app.post("/api/leads", async (req, res) => {
       "New SecureLife lead saved to database"
     );
 
-    // Send emails during this request so Render cannot drop them after the
-    // HTTP response. Google Sheets stays in the background because it is
-    // slow and must not block the thank-you page if it fails.
-    const [confirmation] = await Promise.all([
-      sendAndRecordConfirmation(savedLead),
-      sendAndRecordNotification(savedLead)
-    ]);
-
-    syncReportingInBackground(savedLead);
-
-    return res.status(201).json({
+    // Return as soon as the lead is stored so the quote form is not blocked
+    // by Resend. Email is sent from this same Node process immediately after
+    // the response is flushed, with retries, so a slow or flaky send cannot
+    // stall the visitor or silently disappear with no retry.
+    res.status(201).json({
       success: true,
       message: "Your information has been received.",
-      leadId: savedLead.id,
-      confirmationSent: confirmation.sent === true
+      leadId: savedLead.id
     });
+
+    setImmediate(() => {
+      Promise.all([
+        sendAndRecordConfirmation(savedLead),
+        sendAndRecordNotification(savedLead)
+      ]).catch((error) => {
+        console.error("Background email work failed:", error);
+      });
+      syncReportingInBackground(savedLead);
+    });
+    return;
 
   } catch (error) {
     console.error("Database error:", error);

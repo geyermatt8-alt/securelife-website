@@ -1,7 +1,7 @@
 const { Resend } = require("resend");
 
-// Send from the branded domain. If Resend rejects it because the domain is
-// not verified yet, sendWithFromFallback retries beth.t@example.com.
+// Send from the branded domain only. Do not fall back to
+// beth.t@example.com; that address cannot deliver to customers.
 const FALLBACK_FROM = "SecureLife <beth.t@example.com>";
 
 const BRANDED_FROM = "SecureLife <leads@securelifeinsurances.com>";
@@ -306,31 +306,33 @@ function buildBuyerDeliveryContent(lead) {
   };
 }
 
-async function sendWithFromFallback(resend, payload) {
-  const preferredFrom = payload.from || getFromAddress();
-  let usedFrom = preferredFrom;
+function retryDelayMsList() {
+  const raw = process.env.EMAIL_RETRY_DELAYS || "250,800";
+  return raw
+    .split(",")
+    .map((value) => Number(value.trim()))
+    .filter((value) => Number.isFinite(value) && value >= 0);
+}
 
-  let result = await resend.emails.send({
-    ...payload,
-    from: preferredFrom
-  });
+function isRetryableEmailError(error) {
+  const message = String(
+    (error && error.message) || error || ""
+  ).toLowerCase();
 
   if (
-    result.error &&
-    preferredFrom !== FALLBACK_FROM &&
-    isUnverifiedSenderError(result.error)
+    message.includes("domain is not verified") ||
+    message.includes("you can only send testing emails") ||
+    message.includes("invalid `from`") ||
+    message.includes("invalid from")
   ) {
-    console.warn(
-      `From address ${preferredFrom} was rejected (` +
-      `${errorMessage(result.error)}). Retrying with ${FALLBACK_FROM}.`
-    );
-
-    usedFrom = FALLBACK_FROM;
-    result = await resend.emails.send({
-      ...payload,
-      from: FALLBACK_FROM
-    });
+    return false;
   }
+
+  return true;
+}
+
+async function sendOnce(resend, payload) {
+  const result = await resend.emails.send(payload);
 
   if (result.error) {
     throw new Error(domainHint(result.error));
@@ -338,8 +340,36 @@ async function sendWithFromFallback(resend, payload) {
 
   return {
     id: result.data ? result.data.id : null,
-    from: usedFrom
+    from: payload.from
   };
+}
+
+async function sendWithRetries(resend, payload) {
+  const delays = retryDelayMsList();
+  const attempts = delays.length + 1;
+  let lastError;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await sendOnce(resend, payload);
+    } catch (error) {
+      lastError = error;
+      console.error(
+        `Email send attempt ${attempt}/${attempts} failed: ${error.message}`
+      );
+
+      if (!isRetryableEmailError(error) || attempt === attempts) {
+        throw error;
+      }
+
+      const delay = delays[attempt - 1] || 0;
+      if (delay > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  throw lastError;
 }
 
 async function sendLeadConfirmation(resend, lead) {
@@ -358,7 +388,7 @@ async function sendLeadConfirmation(resend, lead) {
   const from = getConfirmationFromAddress();
   const content = buildLeadConfirmationContent(lead);
 
-  const sent = await sendWithFromFallback(resend, {
+  const sent = await sendWithRetries(resend, {
     from,
     to: [lead.email],
     replyTo: SUPPORT_EMAIL,
@@ -391,7 +421,7 @@ async function sendLeadNotification(resend, lead) {
   const recipients = getNotificationRecipients();
   const content = buildLeadNotificationContent(lead);
 
-  const sent = await sendWithFromFallback(resend, {
+  const sent = await sendWithRetries(resend, {
     from: getFromAddress(),
     to: recipients,
     replyTo: lead.email,
@@ -425,7 +455,7 @@ async function sendBuyerLeadEmail(resend, { lead, buyer }) {
 
   const content = buildBuyerDeliveryContent(lead);
 
-  const sent = await sendWithFromFallback(resend, {
+  const sent = await sendWithRetries(resend, {
     from: getConfirmationFromAddress(),
     to: [buyer.email],
     replyTo: lead.email,
@@ -454,7 +484,7 @@ module.exports = {
   isUnverifiedSenderError,
   buildLeadConfirmationContent,
   buildLeadNotificationContent,
-  sendWithFromFallback,
+  sendWithRetries,
   sendLeadConfirmation,
   sendLeadNotification,
   sendBuyerLeadEmail
